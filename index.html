@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
     <title>What New Songs - Releases</title>
     <!-- Master Shared Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 
     <!-- =======================================================================
@@ -75,7 +78,8 @@
                 <div class="alert-banner-icon">🎉</div>
                 <div>
                     <div id="newReleaseAlertTitle" class="alert-banner-title">New Releases Detected!</div>
-                    <div id="newReleaseAlertText" class="alert-banner-text">Fresh music just dropped from artists you track.</div>
+                    <div id="newReleaseAlertText" class="alert-banner-text">Fresh music just dropped from artists you
+                        track.</div>
                 </div>
             </div>
             <button id="dismissAlertBtn" class="btn btn-secondary btn-sm">Acknowledge</button>
@@ -83,12 +87,8 @@
 
         <!-- Filter Bar: Search within releases -->
         <div class="search-bar-wrapper">
-            <input 
-                type="text" 
-                id="releaseFilterInput" 
-                class="input-field" 
-                placeholder="Filter by song title or artist name..."
-            >
+            <input type="text" id="releaseFilterInput" class="input-field"
+                placeholder="Filter by song title or artist name...">
         </div>
 
         <!-- Category Tabs -->
@@ -128,13 +128,14 @@
          4. JAVASCRIPT MODULE SCRIPTS
          ======================================================================= -->
     <!-- Storage & local database functions -->
-    <script src="../js/storage.js"></script>
+    <script src="./js/storage.js"></script>
     <!-- Spotify API communication -->
-    <script src="../js/spotify-api.js"></script>
+    <script src="./js/spotify-api.js"></script>
     <!-- Shared UI components and theme runner -->
-    <script src="../js/ui.js"></script>
+    <script src="./js/ui.js"></script>
     <!-- Releases screen controller -->
-    <script src="../js/releases.js"></script>
+    <script src="./js/releases.js"></script>
 
 </body>
+
 </html>

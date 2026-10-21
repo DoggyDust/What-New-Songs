@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
     <title>What New Songs - Settings</title>
     <!-- Master Shared Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 
     <!-- =======================================================================
@@ -137,47 +140,41 @@
 
             <!-- 6. Spotify Web API Credentials -->
             <div class="setting-section" style="align-items: flex-start; flex-direction: column; gap: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
                     <div class="setting-info">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <h4>Spotify API Credentials</h4>
-                            <span id="credentialsStatusBadge" class="nav-badge" style="font-size: 11px;">Checking...</span>
+                            <span id="credentialsStatusBadge" class="nav-badge"
+                                style="font-size: 11px;">Checking...</span>
                         </div>
                         <p id="credentialsDesc">Manage your client credentials for connecting to Spotify.</p>
                     </div>
                 </div>
 
-                <div id="credentialsFormBox" style="width: 100%; display: flex; flex-direction: column; gap: 12px; background: var(--bg-surface); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <div id="credentialsFormBox"
+                    style="width: 100%; display: flex; flex-direction: column; gap: 12px; background: var(--bg-surface); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                     <div>
-                        <label for="settingClientIdInput" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                        <label for="settingClientIdInput"
+                            style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
                             Spotify Client ID
                         </label>
-                        <input 
-                            type="text" 
-                            id="settingClientIdInput" 
-                            class="input-field" 
-                            placeholder="Enter Spotify Client ID"
-                            style="border-radius: var(--radius-md);"
-                            autocomplete="off"
-                            spellcheck="false"
-                        >
+                        <input type="text" id="settingClientIdInput" class="input-field"
+                            placeholder="Enter Spotify Client ID" style="border-radius: var(--radius-md);"
+                            autocomplete="off" spellcheck="false">
                     </div>
 
                     <div>
-                        <label for="settingClientSecretInput" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                        <label for="settingClientSecretInput"
+                            style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
                             Spotify Client Secret
                         </label>
                         <div style="display: flex; gap: 8px;">
-                            <input 
-                                type="password" 
-                                id="settingClientSecretInput" 
-                                class="input-field" 
-                                placeholder="Enter Spotify Client Secret"
-                                style="border-radius: var(--radius-md);"
-                                autocomplete="off"
-                                spellcheck="false"
-                            >
-                            <button type="button" id="settingToggleSecretBtn" class="btn btn-secondary btn-sm" title="Show/Hide Secret" style="flex-shrink: 0; padding: 0 12px;">
+                            <input type="password" id="settingClientSecretInput" class="input-field"
+                                placeholder="Enter Spotify Client Secret" style="border-radius: var(--radius-md);"
+                                autocomplete="off" spellcheck="false">
+                            <button type="button" id="settingToggleSecretBtn" class="btn btn-secondary btn-sm"
+                                title="Show/Hide Secret" style="flex-shrink: 0; padding: 0 12px;">
                                 👁️
                             </button>
                         </div>
@@ -187,15 +184,18 @@
                         <button type="button" id="saveCredentialsSettingBtn" class="btn btn-primary btn-sm">
                             Save Credentials
                         </button>
-                        <button type="button" id="clearCredentialsSettingBtn" class="btn btn-secondary btn-sm" style="display: none;">
+                        <button type="button" id="clearCredentialsSettingBtn" class="btn btn-secondary btn-sm"
+                            style="display: none;">
                             Clear Stored Keys
                         </button>
-                        <a href="https://developer.spotify.com/dashboard" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                        <a href="https://developer.spotify.com/dashboard" target="_blank"
+                            class="btn btn-secondary btn-sm" style="text-decoration: none;">
                             Spotify Dashboard ↗
                         </a>
                     </div>
 
-                    <div id="credentialsSettingNotice" style="font-size: 12px; color: var(--text-muted); line-height: 1.5;"></div>
+                    <div id="credentialsSettingNotice"
+                        style="font-size: 12px; color: var(--text-muted); line-height: 1.5;"></div>
                 </div>
             </div>
 
@@ -204,7 +204,8 @@
                 <div class="setting-info">
                     <h4>Spotify API Diagnostics</h4>
                     <p>Verify your connection with Spotify Web API servers.</p>
-                    <div id="connectionStatusText" style="font-size: 13px; font-weight: 600; margin-top: 8px; color: var(--text-secondary);">
+                    <div id="connectionStatusText"
+                        style="font-size: 13px; font-weight: 600; margin-top: 8px; color: var(--text-secondary);">
                         Status: Ready to test
                     </div>
                 </div>
@@ -226,13 +227,14 @@
          3. JAVASCRIPT MODULE SCRIPTS
          ======================================================================= -->
     <!-- Storage & local database functions -->
-    <script src="../js/storage.js"></script>
+    <script src="./js/storage.js"></script>
     <!-- Spotify API communication -->
-    <script src="../js/spotify-api.js"></script>
+    <script src="./js/spotify-api.js"></script>
     <!-- Shared UI components and theme runner -->
-    <script src="../js/ui.js"></script>
+    <script src="./js/ui.js"></script>
     <!-- Settings screen controller -->
-    <script src="../js/settings.js"></script>
+    <script src="./js/settings.js"></script>
 
 </body>
+
 </html>

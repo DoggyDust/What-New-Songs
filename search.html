@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
     <title>What New Songs - Search Artists</title>
     <!-- Master Shared Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
 
     <!-- =======================================================================
@@ -65,12 +68,8 @@
 
         <!-- Search Input Bar -->
         <div class="search-bar-wrapper">
-            <input 
-                type="text" 
-                id="artistSearchInput" 
-                class="input-field" 
-                placeholder="Search artist name or paste Spotify link (e.g. open.spotify.com/artist/...)"
-            >
+            <input type="text" id="artistSearchInput" class="input-field"
+                placeholder="Search artist name or paste Spotify link (e.g. open.spotify.com/artist/...)">
             <button id="searchBtn" class="btn btn-primary" style="flex-shrink: 0;">
                 <span>🔍</span> Search
             </button>
@@ -81,7 +80,8 @@
             <div class="empty-state" style="grid-column: 1 / -1;">
                 <div class="empty-state-icon">🎤</div>
                 <h3>Find Artists to Track</h3>
-                <p>Type the name of any artist or paste their Spotify profile link above to start tracking their drops.</p>
+                <p>Type the name of any artist or paste their Spotify profile link above to start tracking their drops.
+                </p>
             </div>
         </div>
 
@@ -94,7 +94,8 @@
         <div class="modal-box">
             <div class="modal-header">
                 <h3 id="modalArtistName" class="modal-title">Artist Discography</h3>
-                <button id="modalCloseBtn" class="modal-close-btn" onclick="closeArtistModal()" aria-label="Close modal">✕</button>
+                <button id="modalCloseBtn" class="modal-close-btn" onclick="closeArtistModal()"
+                    aria-label="Close modal">✕</button>
             </div>
             <div id="modalReleasesList">
                 <div class="spinner"></div>
@@ -109,13 +110,14 @@
          4. JAVASCRIPT MODULE SCRIPTS
          ======================================================================= -->
     <!-- Storage & local database functions -->
-    <script src="../js/storage.js"></script>
+    <script src="./js/storage.js"></script>
     <!-- Spotify API communication -->
-    <script src="../js/spotify-api.js"></script>
+    <script src="./js/spotify-api.js"></script>
     <!-- Shared UI components and theme runner -->
-    <script src="../js/ui.js"></script>
+    <script src="./js/ui.js"></script>
     <!-- Search screen controller -->
-    <script src="../js/search.js"></script>
+    <script src="./js/search.js"></script>
 
 </body>
+
 </html>

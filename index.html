@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
+    <title>What New Songs - Releases</title>
+    <!-- Master Shared Stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <!-- =======================================================================
+         1. TOP NAVIGATION BAR (Shared across all screen HTML files)
+         ======================================================================= -->
+    <nav class="app-navbar">
+        <!-- App Logo & Branding -->
+        <a href="index.html" class="brand-section">
+            <div class="brand-icon">🟢</div>
+            <span class="brand-title">What New Songs</span>
+        </a>
+
+        <!-- Screen Navigation Links -->
+        <ul class="nav-links">
+            <li>
+                <a href="index.html" class="nav-link active">
+                    <span>🎵</span> Releases
+                </a>
+            </li>
+            <li>
+                <a href="search.html" class="nav-link">
+                    <span>🔍</span> Search Artists
+                </a>
+            </li>
+            <li>
+                <a href="following.html" class="nav-link">
+                    <span>👥</span> Following
+                    <span id="navFollowingCount" class="nav-badge" style="display: none;">0</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html" class="nav-link">
+                    <span>⚙️</span> Settings
+                </a>
+            </li>
+        </ul>
+
+        <!-- Quick Action: Manual Spotify Sync -->
+        <div class="nav-actions">
+            <button id="navSyncBtn" class="btn btn-secondary btn-sm" title="Check Spotify for new releases right now">
+                <span id="navSyncIcon">🔄</span> Sync Drops
+            </button>
+        </div>
+    </nav>
+
+    <!-- =======================================================================
+         2. MAIN RELEASES SCREEN CONTENT
+         ======================================================================= -->
+    <main class="main-content">
+
+        <!-- Screen Header -->
+        <header class="page-header">
+            <div>
+                <h1 class="page-title">Music Releases</h1>
+                <p class="page-subtitle">Track new drops, recent singles, and albums from the artists you follow.</p>
+            </div>
+            <div>
+                <a href="search.html" class="btn btn-primary btn-sm">+ Add Artists</a>
+            </div>
+        </header>
+
+        <!-- Dynamic New Releases Alert Banner (shown only when fresh drops occur) -->
+        <div id="newReleaseAlertBanner" class="alert-banner" style="display: none;">
+            <div class="alert-banner-content">
+                <div class="alert-banner-icon">🎉</div>
+                <div>
+                    <div id="newReleaseAlertTitle" class="alert-banner-title">New Releases Detected!</div>
+                    <div id="newReleaseAlertText" class="alert-banner-text">Fresh music just dropped from artists you track.</div>
+                </div>
+            </div>
+            <button id="dismissAlertBtn" class="btn btn-secondary btn-sm">Acknowledge</button>
+        </div>
+
+        <!-- Filter Bar: Search within releases -->
+        <div class="search-bar-wrapper">
+            <input 
+                type="text" 
+                id="releaseFilterInput" 
+                class="input-field" 
+                placeholder="Filter by song title or artist name..."
+            >
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" id="tabNew" data-tab="new">⚡ New Releases</button>
+            <button class="filter-tab" id="tabPast" data-tab="past">📅 Past Releases</button>
+            <button class="filter-tab" id="tabList" data-tab="list" style="display: none;">📋 Last 30 Days</button>
+            <button class="filter-tab" id="tabFavorites" data-tab="favorites">⭐ Favorites</button>
+        </div>
+
+        <!-- Container where release cards are dynamically rendered -->
+        <div id="releasesList" class="release-grid">
+            <div class="spinner"></div>
+        </div>
+
+    </main>
+
+    <!-- =======================================================================
+         3. ARTIST DISCOGRAPHY PREVIEW MODAL
+         ======================================================================= -->
+    <div id="artistModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalArtistName" class="modal-title">Artist Discography</h3>
+                <button id="modalCloseBtn" class="modal-close-btn" aria-label="Close modal">✕</button>
+            </div>
+            <div id="modalReleasesList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Non-blocking toast alerts container -->
+    <div id="toastContainer"></div>
+
+    <!-- =======================================================================
+         4. JAVASCRIPT MODULE SCRIPTS
+         ======================================================================= -->
+    <!-- Storage & local database functions -->
+    <script src="../js/storage.js"></script>
+    <!-- Spotify API communication -->
+    <script src="../js/spotify-api.js"></script>
+    <!-- Shared UI components and theme runner -->
+    <script src="../js/ui.js"></script>
+    <!-- Releases screen controller -->
+    <script src="../js/releases.js"></script>
+
+</body>
+</html>

@@ -32,7 +32,7 @@ function loadCurrentSettingsIntoForm() {
     if (modeSelect) modeSelect.value = settings.mode || 'timeline';
     if (themeSelect) themeSelect.value = settings.theme || 'dark';
     if (platformSelect) platformSelect.value = settings.platform || 'spotify';
-    if (colorPicker) colorPicker.value = settings.color || '#1DB954';
+    if (colorPicker) colorPicker.value = settings.color || '#007BFF';
     if (bgPicker) bgPicker.value = settings.bgColor || '#121212';
 
     // Show custom background picker only when custom theme is selected
@@ -152,8 +152,20 @@ function bindSettingsEvents() {
         });
     }
 
-    // Primary Accent Color Picker (With Undo History Backup)
+    // Primary Accent Color Picker (With Real-Time Preview & Undo History Backup)
     if (colorPicker) {
+        colorPicker.addEventListener('input', () => {
+            const root = document.documentElement;
+            const chosenColor = colorPicker.value;
+            root.style.setProperty('--primary-color', chosenColor);
+            if (typeof calculateHoverColor === 'function') {
+                root.style.setProperty('--primary-hover', calculateHoverColor(chosenColor));
+            }
+            if (typeof hexToRgba === 'function') {
+                root.style.setProperty('--accent-glow', hexToRgba(chosenColor, 0.3));
+            }
+        });
+
         colorPicker.addEventListener('change', () => {
             backupCurrentSettingsForUndo();
             updateAppSettings({ color: colorPicker.value });

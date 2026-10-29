@@ -12,10 +12,10 @@
 // AES-GCM Encrypted credentials container (PBKDF2-SHA256, 100,000 iterations)
 // Credentials can only be decrypted in memory by supplying the correct access PIN.
 const ENCRYPTED_CREDENTIALS_STORE = {
-    salt: '5c42c2fb1c39557c91de8b0b23e7a7cd',
-    iv: 'cbde025e04d82ad20dc75e0a',
-    ciphertext: '1d358b236e1c3bc740e206c51479b97379fa7c082cf21599be0f628bfe3d7b50524b14f8e7cfbc8eddbe757c9b95f81e232a95a9780c4b84f4a9a456aaea654653714aba344cdce3d8cd29bf19c0b71784adfbb65ba23b9a893da3c7581b4a192a',
-    tag: 'cbcb0291acfbf185139c06baeaa7cd22'
+    salt: '8fa9af5aa9f652ae3dfd015cd56efc59',
+    iv: '95f9f3db5542f80d91561f44',
+    ciphertext: '7242d4d82bce0be56be67e678d7ed5b40a62ded19802d9009f7007fda64785b56c99e818d03901fa4ec7fd066770310f119ff5baea7ec854dd4097be59591ca3549717e9bcc46abccff8a11e420d5d4a7f22d488322c236726a4f9bdd1216eb5bf',
+    tag: 'c36a036931fd985cf8ff295977845131'
 };
 
 // Helper: Convert hex string to Uint8Array

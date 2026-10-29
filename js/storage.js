@@ -22,7 +22,7 @@ const DEFAULT_DATABASE = {
     settings: {
         mode: 'timeline',      // 'timeline' (New vs Past) or 'list' (Last 30 Days)
         theme: 'dark',         // 'dark', 'light', or 'custom'
-        color: '#1DB954',      // Primary accent color (default Spotify green)
+        color: '#007BFF',      // Primary accent color (default #007BFF)
         bgColor: '#121212',    // Custom background color
         platform: 'spotify'    // 'spotify', 'apple', or 'youtube'
     },
@@ -59,6 +59,9 @@ function getDatabase() {
         if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
         if (!Array.isArray(parsed.seenReleaseIds)) parsed.seenReleaseIds = [];
         if (!parsed.settings) parsed.settings = { ...DEFAULT_DATABASE.settings };
+        if (!parsed.settings.color || parsed.settings.color.toLowerCase() === '#1db954') {
+            parsed.settings.color = '#007BFF';
+        }
         if (!parsed.credentials || typeof parsed.credentials !== 'object') {
             parsed.credentials = {
                 clientId: localStorage.getItem('spotify_client_id') || '',

@@ -68,22 +68,51 @@ function applyThemeFromSettings() {
     }
 
     // Apply User's Primary Accent Color (Buttons, Active Tabs, Highlights)
-    if (settings.color) {
-        root.style.setProperty('--primary-color', settings.color);
-        // Calculate a glowing accent shadow
-        root.style.setProperty('--accent-glow', hexToRgba(settings.color, 0.3));
+    const activeColor = settings.color || '#007BFF';
+    root.style.setProperty('--primary-color', activeColor);
+    root.style.setProperty('--primary-hover', calculateHoverColor(activeColor));
+    root.style.setProperty('--accent-glow', hexToRgba(activeColor, 0.3));
+}
+
+// --------------------------------------------------------------------------
+// Helper: Calculate harmonious hover color (lightened/adjusted brightness)
+// --------------------------------------------------------------------------
+function calculateHoverColor(hex) {
+    if (!hex || hex.length < 6) return '#3395ff';
+    const cleanHex = hex.replace('#', '');
+    let r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+    let g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+    let b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+
+    // Perceived luminance (YIQ formula)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    if (brightness > 210) {
+        // If already very light, slightly deepen for hover contrast
+        r = Math.max(0, Math.round(r * 0.85));
+        g = Math.max(0, Math.round(g * 0.85));
+        b = Math.max(0, Math.round(b * 0.85));
+    } else {
+        // Lighten by 20% for a vivid hover highlight
+        r = Math.min(255, Math.round(r + (255 - r) * 0.20));
+        g = Math.min(255, Math.round(g + (255 - g) * 0.20));
+        b = Math.min(255, Math.round(b + (255 - b) * 0.20));
     }
+
+    const rHex = r.toString(16).padStart(2, '0');
+    const gHex = g.toString(16).padStart(2, '0');
+    const bHex = b.toString(16).padStart(2, '0');
+    return `#${rHex}${gHex}${bHex}`;
 }
 
 // --------------------------------------------------------------------------
 // Helper: Convert HEX color to RGBA for smooth accent glows
 // --------------------------------------------------------------------------
 function hexToRgba(hex, alpha = 0.3) {
-    if (!hex || hex.length < 6) return `rgba(29, 185, 84, ${alpha})`;
+    if (!hex || hex.length < 6) return `rgba(0, 123, 255, ${alpha})`;
     const cleanHex = hex.replace('#', '');
-    const r = parseInt(cleanHex.substring(0, 2), 16) || 29;
-    const g = parseInt(cleanHex.substring(2, 4), 16) || 185;
-    const b = parseInt(cleanHex.substring(4, 6), 16) || 84;
+    const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+    const g = parseInt(cleanHex.substring(2, 4), 16) || 123;
+    const b = parseInt(cleanHex.substring(4, 6), 16) || 255;
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -94,7 +123,7 @@ function highlightActiveNav() {
     const currentPath = window.location.pathname;
     const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
 
-    const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
     navLinks.forEach(link => {
         const href = link.getAttribute('href');
         if (href === pageName || (pageName === '' && href === 'index.html')) {
@@ -111,11 +140,11 @@ function highlightActiveNav() {
 function updateNavFollowingBadge() {
     const db = getDatabase();
     const count = db.artists ? db.artists.length : 0;
-    const badge = document.getElementById('navFollowingCount');
-    if (badge) {
+    const badges = document.querySelectorAll('#navFollowingCount, .nav-badge, .mobile-nav-badge');
+    badges.forEach(badge => {
         badge.textContent = count;
         badge.style.display = count > 0 ? 'inline-block' : 'none';
-    }
+    });
 }
 
 // --------------------------------------------------------------------------
@@ -306,7 +335,7 @@ function injectCredentialsModal() {
                                 class="input-field" 
                                 placeholder="Enter Access PIN" 
                                 autocomplete="current-password" 
-                                inputmode="numeric"
+                                inputmode="decimal"
                                 spellcheck="false"
                                 style="border-radius: var(--radius-md); font-family: inherit; letter-spacing: 2px;"
                                 required

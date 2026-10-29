@@ -23,9 +23,9 @@
     --text-muted: #7A7A7A;
 
     /* Brand / Accent Colors (Can be updated dynamically in settings) */
-    --primary-color: #116acf;
-    --primary-hover: #397eed;
-    --accent-glow: rgba(0, 180, 216, 0.25);
+    --primary-color: #007BFF;
+    --primary-hover: #3395ff;
+    --accent-glow: rgba(0, 123, 255, 0.25);
 
     /* Utility Colors */
     --danger-color: #e22134;
@@ -589,7 +589,7 @@ body {
    9. ANNOUNCEMENT / NEW RELEASES BANNER
    -------------------------------------------------------------------------- */
 .alert-banner {
-    background: linear-gradient(135deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.05));
+    background: linear-gradient(135deg, var(--accent-glow), transparent);
     border: 1px solid var(--primary-color);
     border-radius: var(--radius-md);
     padding: 16px 20px;
@@ -915,5 +915,202 @@ input[type="color"].color-picker::-webkit-color-swatch {
     to {
         transform: scale(1);
         opacity: 1;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   14. MOBILE NAVIGATION BAR & RESPONSIVE LAYOUT
+   -------------------------------------------------------------------------- */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background-color: rgba(24, 24, 24, 0.95);
+    border-top: 1px solid var(--border-color);
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    justify-content: space-around;
+    align-items: center;
+}
+
+body.light-mode .mobile-bottom-nav {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid var(--border-color);
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    position: relative;
+    transition: all var(--transition-fast);
+    min-width: 60px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-icon {
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-fast);
+}
+
+.mobile-nav-item.active {
+    color: var(--primary-color);
+}
+
+.mobile-nav-item.active .mobile-nav-icon {
+    transform: scale(1.15);
+}
+
+.mobile-nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 12px;
+    background: var(--primary-color);
+    color: #ffffff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+@media (max-width: 768px) {
+    :root {
+        --nav-height: 58px;
+    }
+
+    body {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .app-navbar {
+        padding: 0 16px;
+    }
+
+    .nav-links {
+        display: none !important;
+    }
+
+    .brand-title {
+        font-size: 15px;
+    }
+
+    .mobile-bottom-nav {
+        display: flex;
+    }
+
+    .main-content {
+        padding: 18px 14px 24px 14px;
+    }
+
+    .page-header {
+        margin-bottom: 18px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .page-subtitle {
+        font-size: 13px;
+    }
+
+    .release-card {
+        padding: 12px 14px;
+        gap: 12px;
+    }
+
+    .album-cover {
+        width: 58px;
+        height: 58px;
+    }
+
+    .release-title {
+        font-size: 14px;
+        max-width: 180px;
+    }
+
+    .release-artist {
+        font-size: 12px;
+    }
+
+    .release-meta {
+        font-size: 11px;
+    }
+
+    .listen-btn {
+        padding: 7px 12px;
+        font-size: 11px;
+    }
+
+    .artist-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .artist-card {
+        padding: 16px 10px;
+    }
+
+    .artist-avatar {
+        width: 84px;
+        height: 84px;
+        margin-bottom: 10px;
+    }
+
+    .artist-name {
+        font-size: 13px;
+    }
+
+    .modal-box {
+        max-width: 95%;
+        padding: 18px 14px;
+        max-height: 88vh;
+    }
+
+    #toastContainer {
+        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+        right: 14px;
+        left: 14px;
+    }
+
+    .toast {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .release-actions {
+        gap: 6px;
+    }
+
+    .release-title {
+        max-width: 140px;
+    }
+
+    .filter-tabs {
+        margin-bottom: 18px;
+    }
+
+    .filter-tab {
+        padding: 7px 14px;
+        font-size: 12px;
     }
 }

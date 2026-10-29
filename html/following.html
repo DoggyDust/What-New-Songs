@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
+    <title>What New Songs - Following</title>
+    <link rel="icon" type="image/png" href="../icon.png">
+    <link rel="apple-touch-icon" href="../icon.png">
+    <!-- Master Shared Stylesheet -->
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <!-- =======================================================================
+         1. TOP NAVIGATION BAR (Shared across screens)
+         ======================================================================= -->
+    <nav class="app-navbar">
+        <a href="index.html" class="brand-section">
+            <div class="brand-icon">🎵</div>
+            <span class="brand-title">What New Songs</span>
+        </a>
+
+        <!-- Screen Navigation Links (Desktop) -->
+        <ul class="nav-links">
+            <li>
+                <a href="index.html" class="nav-link">
+                    <span>🎵</span> Releases
+                </a>
+            </li>
+            <li>
+                <a href="search.html" class="nav-link">
+                    <span>🔍</span> Search Artists
+                </a>
+            </li>
+            <li>
+                <a href="following.html" class="nav-link active">
+                    <span>👥</span> Following
+                    <span id="navFollowingCount" class="nav-badge" style="display: none;">0</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html" class="nav-link">
+                    <span>⚙️</span> Settings
+                </a>
+            </li>
+        </ul>
+
+        <div class="nav-actions">
+            <button id="navSyncBtn" class="btn btn-secondary btn-sm" title="Check Spotify for new releases right now">
+                <span id="navSyncIcon">🔄</span> Sync Drops
+            </button>
+        </div>
+    </nav>
+
+    <!-- =======================================================================
+         2. MAIN FOLLOWING SCREEN CONTENT
+         ======================================================================= -->
+    <main class="main-content">
+
+        <!-- Screen Header -->
+        <header class="page-header">
+            <div>
+                <h1 class="page-title">Followed Artists</h1>
+                <p class="page-subtitle">Click any artist to view their recent albums and singles.</p>
+            </div>
+            <div>
+                <span id="followingTotalCount" class="nav-badge"
+                    style="font-size: 13px; padding: 6px 14px; background: var(--bg-surface);">0 Artists</span>
+            </div>
+        </header>
+
+        <!-- Search / Filter within followed artists -->
+        <div class="search-bar-wrapper">
+            <input type="text" id="followingFilterInput" class="input-field"
+                placeholder="Filter followed artists by name...">
+        </div>
+
+        <!-- Followed Artists Grid -->
+        <div id="followingGrid" class="artist-grid">
+            <div class="spinner"></div>
+        </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+        <a href="index.html" class="mobile-nav-item">
+            <span class="mobile-nav-icon">🎵</span>
+            <span class="mobile-nav-label">Releases</span>
+        </a>
+        <a href="search.html" class="mobile-nav-item">
+            <span class="mobile-nav-icon">🔍</span>
+            <span class="mobile-nav-label">Search</span>
+        </a>
+        <a href="following.html" class="mobile-nav-item active">
+            <span class="mobile-nav-icon">👥</span>
+            <span class="mobile-nav-label">Following</span>
+            <span class="mobile-nav-badge nav-badge" style="display: none;">0</span>
+        </a>
+        <a href="settings.html" class="mobile-nav-item">
+            <span class="mobile-nav-icon">⚙️</span>
+            <span class="mobile-nav-label">Settings</span>
+        </a>
+    </nav>
+
+    <!-- =======================================================================
+         3. ARTIST DISCOGRAPHY PREVIEW MODAL
+         ======================================================================= -->
+    <div id="artistModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalArtistName" class="modal-title">Artist Releases</h3>
+                <button id="modalCloseBtn" class="modal-close-btn" onclick="closeArtistModal()"
+                    aria-label="Close modal">✕</button>
+            </div>
+            <div id="modalReleasesList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Non-blocking toast alerts container -->
+    <div id="toastContainer"></div>
+
+    <!-- =======================================================================
+         4. JAVASCRIPT MODULE SCRIPTS
+         ======================================================================= -->
+    <!-- Storage & local database functions -->
+    <script src="../js/storage.js"></script>
+    <!-- Spotify API communication -->
+    <script src="../js/spotify-api.js"></script>
+    <!-- Shared UI components and theme runner -->
+    <script src="../js/ui.js"></script>
+    <!-- Following screen controller -->
+    <script src="../js/following.js"></script>
+
+</body>
+
+</html>

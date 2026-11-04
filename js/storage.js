@@ -29,9 +29,9 @@ function getDatabase() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return { ...DEFAULT_DATABASE };
-        
+
         const parsed = JSON.parse(stored);
-        
+
         if (!Array.isArray(parsed.artists)) parsed.artists = [];
         if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
         if (!Array.isArray(parsed.pinnedArtists)) parsed.pinnedArtists = [];
@@ -41,8 +41,8 @@ function getDatabase() {
         if (!Array.isArray(parsed.seenReleaseIds)) parsed.seenReleaseIds = [];
         if (!parsed.settings) parsed.settings = { ...DEFAULT_DATABASE.settings };
 
-        if (!parsed.settings.color || 
-            parsed.settings.color.toLowerCase() === '#1db954' || 
+        if (!parsed.settings.color ||
+            parsed.settings.color.toLowerCase() === '#1db954' ||
             parsed.settings.color.toLowerCase() === '#007bff') {
             parsed.settings.color = '#4169E1';
         }
@@ -53,7 +53,7 @@ function getDatabase() {
                 clientSecret: localStorage.getItem('spotify_client_secret') || ''
             };
         }
-        
+
         return parsed;
     } catch (error) {
         return { ...DEFAULT_DATABASE };
@@ -63,7 +63,7 @@ function getDatabase() {
 function saveDatabase(db) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-    } catch (error) {}
+    } catch (error) { }
 }
 
 function initSessionTimestamps() {
@@ -158,7 +158,7 @@ function toggleFavoriteRelease(releaseId) {
     const db = getDatabase();
     const index = db.favorites.indexOf(releaseId);
     let isNowFavorited = false;
-    
+
     if (index > -1) {
         db.favorites.splice(index, 1);
         isNowFavorited = false;
@@ -166,7 +166,7 @@ function toggleFavoriteRelease(releaseId) {
         db.favorites.push(releaseId);
         isNowFavorited = true;
     }
-    
+
     saveDatabase(db);
     return isNowFavorited;
 }
@@ -204,18 +204,18 @@ function markReleasesAsSeen(releaseIds) {
     const db = getDatabase();
     let updated = false;
     if (!Array.isArray(db.seenReleaseIds)) db.seenReleaseIds = [];
-    
+
     releaseIds.forEach(id => {
         if (!db.seenReleaseIds.includes(id)) {
             db.seenReleaseIds.push(id);
             updated = true;
         }
     });
-    
+
     if (db.seenReleaseIds.length > 1000) {
         db.seenReleaseIds = db.seenReleaseIds.slice(-1000);
     }
-    
+
     if (updated) {
         saveDatabase(db);
     }
@@ -375,9 +375,6 @@ function resetPinAttempts() {
     localStorage.removeItem('spotify_pin_lockout_until');
 }
 
-// --------------------------------------------------------------------------
-// Function: Format release date to day/month/year (DD/MM/YYYY)
-// --------------------------------------------------------------------------
 function formatReleaseDate(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return '';
     const parts = dateStr.trim().split('-');
@@ -392,9 +389,6 @@ function formatReleaseDate(dateStr) {
     return dateStr;
 }
 
-// --------------------------------------------------------------------------
-// Function: Safely parse date strings into local date objects avoiding UTC shift
-// --------------------------------------------------------------------------
 function parseLocalDate(dateStr) {
     if (!dateStr) return null;
     const parts = dateStr.split('-');
@@ -407,9 +401,6 @@ function parseLocalDate(dateStr) {
     return new Date(parseInt(parts[0], 10), 0, 1);
 }
 
-// --------------------------------------------------------------------------
-// Function: Calculate accurate calendar age in days for music releases
-// --------------------------------------------------------------------------
 function getReleaseAgeInDays(releaseDateStr, precision) {
     if (!releaseDateStr) return 999;
     let cleanDateStr = releaseDateStr;
@@ -420,16 +411,12 @@ function getReleaseAgeInDays(releaseDateStr, precision) {
     const relDate = parseLocalDate(cleanDateStr);
     if (!relDate || isNaN(relDate.getTime())) return 999;
 
-    // Normalize both to local midnight to compare calendar days accurately
     const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const relMidnight = new Date(relDate.getFullYear(), relDate.getMonth(), relDate.getDate()).getTime();
 
     return Math.round((todayMidnight - relMidnight) / (1000 * 60 * 60 * 24));
 }
 
-// --------------------------------------------------------------------------
-// Function: Export all application data to a single JSON backup file
-// --------------------------------------------------------------------------
 function exportDatabaseToFile() {
     const db = getDatabase();
     const exportData = {
@@ -473,9 +460,6 @@ function exportDatabaseToFile() {
     return { success: true, fileName };
 }
 
-// --------------------------------------------------------------------------
-// Function: Validate and import application data from an uploaded file
-// --------------------------------------------------------------------------
 function validateAndImportDatabase(rawContent) {
     if (!rawContent || typeof rawContent !== 'string') {
         return { success: false, error: 'Error importing data: The file is empty or invalid.' };
@@ -492,7 +476,6 @@ function validateAndImportDatabase(rawContent) {
         return { success: false, error: 'Error importing data: File structure does not make sense.' };
     }
 
-    // Validate artists array
     if (parsed.artists !== undefined) {
         if (!Array.isArray(parsed.artists)) {
             return { success: false, error: 'Error importing data: Artists data is corrupted.' };
@@ -505,35 +488,30 @@ function validateAndImportDatabase(rawContent) {
         }
     }
 
-    // Validate favorites
     if (parsed.favorites !== undefined) {
         if (!Array.isArray(parsed.favorites) || !parsed.favorites.every(id => typeof id === 'string')) {
             return { success: false, error: 'Error importing data: Favorites list is corrupted.' };
         }
     }
 
-    // Validate pinnedArtists
     if (parsed.pinnedArtists !== undefined) {
         if (!Array.isArray(parsed.pinnedArtists) || !parsed.pinnedArtists.every(id => typeof id === 'string')) {
             return { success: false, error: 'Error importing data: Pinned artists list is corrupted.' };
         }
     }
 
-    // Validate favoriteArtists
     if (parsed.favoriteArtists !== undefined) {
         if (!Array.isArray(parsed.favoriteArtists) || !parsed.favoriteArtists.every(id => typeof id === 'string')) {
             return { success: false, error: 'Error importing data: Favorite artists list is corrupted.' };
         }
     }
 
-    // Validate seenReleaseIds
     if (parsed.seenReleaseIds !== undefined) {
         if (!Array.isArray(parsed.seenReleaseIds) || !parsed.seenReleaseIds.every(id => typeof id === 'string')) {
             return { success: false, error: 'Error importing data: Seen releases list is corrupted.' };
         }
     }
 
-    // Validate settings
     if (parsed.settings !== undefined) {
         if (!parsed.settings || typeof parsed.settings !== 'object' || Array.isArray(parsed.settings)) {
             return { success: false, error: 'Error importing data: Settings format does not make sense.' };
@@ -549,7 +527,6 @@ function validateAndImportDatabase(rawContent) {
         }
     }
 
-    // Validate credentials
     if (parsed.credentials !== undefined) {
         if (!parsed.credentials || typeof parsed.credentials !== 'object' || Array.isArray(parsed.credentials)) {
             return { success: false, error: 'Error importing data: Credentials format does not make sense.' };
@@ -562,7 +539,6 @@ function validateAndImportDatabase(rawContent) {
         }
     }
 
-    // Validation succeeded — build safe database state
     const currentDb = getDatabase();
     const newDb = {
         artists: Array.isArray(parsed.artists) ? parsed.artists.map(a => ({

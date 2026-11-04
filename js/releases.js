@@ -289,7 +289,6 @@ function buildReleaseCard(rel, db, seenIds, preferredPlatform) {
     const isFav = isReleaseFavorited(rel);
     const isBrandNew = !seenIds.has(rel.id);
 
-    // Look up artist avatar photo from followed artists list
     let artistAvatar = '';
     if (db && Array.isArray(db.artists)) {
         const found = db.artists.find(a =>

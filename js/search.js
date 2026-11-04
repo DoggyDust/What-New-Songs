@@ -1,18 +1,7 @@
-// ==========================================================================
-// SEARCH & DISCOVER CONTROLLER (search.html)
-// ==========================================================================
-// This script powers the artist search screen:
-// 1. Accepts artist names or direct Spotify URLs, URIs, and raw Artist IDs.
-// 2. Fetches matching artists via Spotify Web API.
-// 3. Renders clean, modern artist cards with avatars and follower counts.
-// 4. Allows 1-click Follow/Unfollow with real-time UI & navbar badge updates.
-// ==========================================================================
-
 document.addEventListener('DOMContentLoaded', () => {
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('artistSearchInput');
 
-    // Trigger search on button click
     if (searchBtn) {
         searchBtn.addEventListener('click', executeSearch);
     }
@@ -26,9 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --------------------------------------------------------------------------
-// Function: Execute search query or direct ID lookup
-// --------------------------------------------------------------------------
 async function executeSearch() {
     const input = document.getElementById('artistSearchInput');
     const resultsContainer = document.getElementById('searchResultsGrid');
@@ -47,12 +33,10 @@ async function executeSearch() {
 
     resultsContainer.innerHTML = '<div class="spinner"></div>';
 
-    // 1. Check if the query is a direct Spotify URL, URI, or 22-char ID
     const directId = extractArtistId(query);
 
     if (directId) {
         try {
-            // Direct fetch of the specific artist
             const artist = await getArtistById(directId);
             if (artist && artist.id) {
                 renderArtistResults([artist], resultsContainer);
@@ -63,7 +47,6 @@ async function executeSearch() {
         }
     }
 
-    // 2. Otherwise perform text search across Spotify
     try {
         const artists = await searchSpotifyArtists(query);
         renderArtistResults(artists, resultsContainer);
@@ -79,9 +62,6 @@ async function executeSearch() {
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Render list of artist cards in grid
-// --------------------------------------------------------------------------
 function renderArtistResults(artists, container) {
     container.innerHTML = '';
 
@@ -97,7 +77,6 @@ function renderArtistResults(artists, container) {
     }
 
     artists.forEach(artist => {
-        // Pick best avatar image available
         const avatarUrl = (artist.images && artist.images.length > 0) ? artist.images[0].url : 'icon.png';
         const isFollowed = isArtistFollowed(artist.id);
         const genres = (artist.genres && artist.genres.length > 0) ? artist.genres.slice(0, 2).join(', ') : 'Artist';
@@ -114,14 +93,12 @@ function renderArtistResults(artists, container) {
             </button>
         `;
 
-        // Follow toggle button click handler
         const btn = card.querySelector('.follow-toggle-btn');
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             handleFollowToggle(artist, avatarUrl, btn);
         });
 
-        // Clicking card opens recent discography
         card.addEventListener('click', () => {
             openArtistDiscographyModal(artist.id, artist.name);
         });
@@ -130,20 +107,15 @@ function renderArtistResults(artists, container) {
     });
 }
 
-// --------------------------------------------------------------------------
-// Function: Handle Following / Unfollowing an artist
-// --------------------------------------------------------------------------
 function handleFollowToggle(artist, avatarUrl, btn) {
     const isCurrentlyFollowed = isArtistFollowed(artist.id);
 
     if (isCurrentlyFollowed) {
-        // Unfollow
         unfollowArtist(artist.id);
         btn.classList.remove('is-following');
         btn.textContent = '+ Follow';
         showToast(`Unfollowed ${artist.name}`);
     } else {
-        // Follow
         followArtist({
             id: artist.id,
             name: artist.name,
@@ -154,13 +126,9 @@ function handleFollowToggle(artist, avatarUrl, btn) {
         showToast(`Now following ${artist.name}!`);
     }
 
-    // Refresh navbar counter badge
     updateNavFollowingBadge();
 }
 
-// --------------------------------------------------------------------------
-// Helper: Sanitize HTML text
-// --------------------------------------------------------------------------
 function escapeHtml(str) {
     if (!str) return '';
     return str

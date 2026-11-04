@@ -1,52 +1,30 @@
-// ==========================================================================
-// STORAGE MODULE - Handles local database persistence via localStorage
-// ==========================================================================
-// This file is responsible for reading, writing, and updating user data:
-// 1. Followed artists list (ID, name, and profile picture).
-// 2. Favorite tracks/albums IDs.
-// 3. User configuration settings (view mode, theme colors, default player).
-// 4. Seen releases list to detect and notify when BRAND NEW releases drop.
-// ==========================================================================
-
 const STORAGE_KEY = 'spotifyTrackerDb';
 
-// Default schema used when the app is opened for the first time
 const DEFAULT_DATABASE = {
-    // Array of followed artists: [{ id: '...', name: '...', image: '...' }]
     artists: [],
-    
-    // Array of favorited release IDs: ['album_id_1', 'album_id_2']
     favorites: [],
-    
-    // User interface and playback settings
+    pinnedArtists: [],
+    favoriteArtists: [],
+    accentColorHistory: [],
+    bgColorHistory: [],
     settings: {
-        mode: 'timeline',      // 'timeline' (New vs Past) or 'list' (Last 30 Days)
-        theme: 'dark',         // 'dark', 'light', or 'custom'
-        color: '#007BFF',      // Primary accent color (default #007BFF)
-        bgColor: '#121212',    // Custom background color
-        platform: 'spotify'    // 'spotify', 'apple', or 'youtube'
+        mode: 'timeline',
+        theme: 'dark',
+        color: '#4169E1',
+        bgColor: '#121212',
+        platform: 'spotify'
     },
-    
-    // Previous settings backup to support "Undo" on color changes
     previousSettings: null,
-    
-    // Timestamp of the last time releases were checked
     lastCheckedTimestamp: 0,
-    
-    // Release IDs that have already been acknowledged by the user
-    // This allows us to highlight truly new drops with a "NEW" badge!
+    lastOpenedTimestamp: Date.now(),
+    previousSessionOpenedTimestamp: 0,
     seenReleaseIds: [],
-
-    // Spotify Web API Developer credentials (stored locally per user)
     credentials: {
         clientId: '',
         clientSecret: ''
     }
 };
 
-// --------------------------------------------------------------------------
-// Load the entire database from localStorage with fallback error handling
-// --------------------------------------------------------------------------
 function getDatabase() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -54,14 +32,21 @@ function getDatabase() {
         
         const parsed = JSON.parse(stored);
         
-        // Ensure all required fields exist even if reading an older version
         if (!Array.isArray(parsed.artists)) parsed.artists = [];
         if (!Array.isArray(parsed.favorites)) parsed.favorites = [];
+        if (!Array.isArray(parsed.pinnedArtists)) parsed.pinnedArtists = [];
+        if (!Array.isArray(parsed.favoriteArtists)) parsed.favoriteArtists = [];
+        if (!Array.isArray(parsed.accentColorHistory)) parsed.accentColorHistory = [];
+        if (!Array.isArray(parsed.bgColorHistory)) parsed.bgColorHistory = [];
         if (!Array.isArray(parsed.seenReleaseIds)) parsed.seenReleaseIds = [];
         if (!parsed.settings) parsed.settings = { ...DEFAULT_DATABASE.settings };
-        if (!parsed.settings.color || parsed.settings.color.toLowerCase() === '#1db954') {
-            parsed.settings.color = '#007BFF';
+
+        if (!parsed.settings.color || 
+            parsed.settings.color.toLowerCase() === '#1db954' || 
+            parsed.settings.color.toLowerCase() === '#007bff') {
+            parsed.settings.color = '#4169E1';
         }
+
         if (!parsed.credentials || typeof parsed.credentials !== 'object') {
             parsed.credentials = {
                 clientId: localStorage.getItem('spotify_client_id') || '',
@@ -71,36 +56,40 @@ function getDatabase() {
         
         return parsed;
     } catch (error) {
-        console.error("// Storage Error: Failed to parse local database", error);
         return { ...DEFAULT_DATABASE };
     }
 }
 
-// --------------------------------------------------------------------------
-// Save the database object back to localStorage
-// --------------------------------------------------------------------------
 function saveDatabase(db) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-    } catch (error) {
-        console.error("// Storage Error: Failed to write to localStorage", error);
-    }
+    } catch (error) {}
 }
 
-// --------------------------------------------------------------------------
-// Helper: Check if an artist is already in the followed list
-// --------------------------------------------------------------------------
+function initSessionTimestamps() {
+    const db = getDatabase();
+    const now = Date.now();
+    if (!db.previousSessionOpenedTimestamp && db.lastOpenedTimestamp) {
+        db.previousSessionOpenedTimestamp = db.lastOpenedTimestamp;
+    } else if (db.lastOpenedTimestamp && (now - db.lastOpenedTimestamp > 60000)) {
+        db.previousSessionOpenedTimestamp = db.lastOpenedTimestamp;
+    }
+    db.lastOpenedTimestamp = now;
+    saveDatabase(db);
+}
+
+function getPreviousSessionOpenedTimestamp() {
+    const db = getDatabase();
+    return db.previousSessionOpenedTimestamp || (Date.now() - 7 * 24 * 60 * 60 * 1000);
+}
+
 function isArtistFollowed(artistId) {
     const db = getDatabase();
     return db.artists.some(a => a.id === artistId);
 }
 
-// --------------------------------------------------------------------------
-// Helper: Add an artist to the followed list
-// --------------------------------------------------------------------------
 function followArtist(artist) {
     const db = getDatabase();
-    // Prevent duplicate entries
     if (!db.artists.some(a => a.id === artist.id)) {
         db.artists.push({
             id: artist.id,
@@ -113,31 +102,67 @@ function followArtist(artist) {
     return false;
 }
 
-// --------------------------------------------------------------------------
-// Helper: Remove an artist from the followed list
-// --------------------------------------------------------------------------
 function unfollowArtist(artistId) {
     const db = getDatabase();
     const initialLength = db.artists.length;
     db.artists = db.artists.filter(a => a.id !== artistId);
+    if (db.pinnedArtists) db.pinnedArtists = db.pinnedArtists.filter(id => id !== artistId);
+    if (db.favoriteArtists) db.favoriteArtists = db.favoriteArtists.filter(id => id !== artistId);
     saveDatabase(db);
     return db.artists.length !== initialLength;
 }
 
-// --------------------------------------------------------------------------
-// Helper: Toggle whether a release is starred/favorited
-// --------------------------------------------------------------------------
+function isArtistPinned(artistId) {
+    const db = getDatabase();
+    return Array.isArray(db.pinnedArtists) && db.pinnedArtists.includes(artistId);
+}
+
+function togglePinArtist(artistId) {
+    const db = getDatabase();
+    if (!Array.isArray(db.pinnedArtists)) db.pinnedArtists = [];
+    const index = db.pinnedArtists.indexOf(artistId);
+    let isPinned = false;
+    if (index > -1) {
+        db.pinnedArtists.splice(index, 1);
+        isPinned = false;
+    } else {
+        db.pinnedArtists.push(artistId);
+        isPinned = true;
+    }
+    saveDatabase(db);
+    return isPinned;
+}
+
+function isArtistFavorited(artistId) {
+    const db = getDatabase();
+    return Array.isArray(db.favoriteArtists) && db.favoriteArtists.includes(artistId);
+}
+
+function toggleFavoriteArtist(artistId) {
+    const db = getDatabase();
+    if (!Array.isArray(db.favoriteArtists)) db.favoriteArtists = [];
+    const index = db.favoriteArtists.indexOf(artistId);
+    let isFavorited = false;
+    if (index > -1) {
+        db.favoriteArtists.splice(index, 1);
+        isFavorited = false;
+    } else {
+        db.favoriteArtists.push(artistId);
+        isFavorited = true;
+    }
+    saveDatabase(db);
+    return isFavorited;
+}
+
 function toggleFavoriteRelease(releaseId) {
     const db = getDatabase();
     const index = db.favorites.indexOf(releaseId);
     let isNowFavorited = false;
     
     if (index > -1) {
-        // Remove from favorites
         db.favorites.splice(index, 1);
         isNowFavorited = false;
     } else {
-        // Add to favorites
         db.favorites.push(releaseId);
         isNowFavorited = true;
     }
@@ -146,20 +171,39 @@ function toggleFavoriteRelease(releaseId) {
     return isNowFavorited;
 }
 
-// --------------------------------------------------------------------------
-// Helper: Check if a release is marked as favorite
-// --------------------------------------------------------------------------
-function isReleaseFavorited(releaseId) {
+function isReleaseFavorited(release) {
     const db = getDatabase();
-    return db.favorites.includes(releaseId);
+    const releaseId = typeof release === 'object' && release !== null ? release.id : release;
+    if (db.favorites && db.favorites.includes(releaseId)) {
+        return true;
+    }
+    if (typeof release === 'object' && release !== null && Array.isArray(release.artists)) {
+        return release.artists.some(artist => isArtistFavorited(artist.id));
+    }
+    return false;
 }
 
-// --------------------------------------------------------------------------
-// Helper: Mark releases as seen so they don't repeatedly show "NEW" badges
-// --------------------------------------------------------------------------
+function isReleaseSeen(releaseId) {
+    const db = getDatabase();
+    return Array.isArray(db.seenReleaseIds) && db.seenReleaseIds.includes(releaseId);
+}
+
+function markReleaseAsSeen(releaseId) {
+    const db = getDatabase();
+    if (!Array.isArray(db.seenReleaseIds)) db.seenReleaseIds = [];
+    if (!db.seenReleaseIds.includes(releaseId)) {
+        db.seenReleaseIds.push(releaseId);
+        if (db.seenReleaseIds.length > 1000) {
+            db.seenReleaseIds = db.seenReleaseIds.slice(-1000);
+        }
+        saveDatabase(db);
+    }
+}
+
 function markReleasesAsSeen(releaseIds) {
     const db = getDatabase();
     let updated = false;
+    if (!Array.isArray(db.seenReleaseIds)) db.seenReleaseIds = [];
     
     releaseIds.forEach(id => {
         if (!db.seenReleaseIds.includes(id)) {
@@ -168,9 +212,8 @@ function markReleasesAsSeen(releaseIds) {
         }
     });
     
-    // Keep list bounded so localStorage doesn't grow indefinitely
-    if (db.seenReleaseIds.length > 500) {
-        db.seenReleaseIds = db.seenReleaseIds.slice(-500);
+    if (db.seenReleaseIds.length > 1000) {
+        db.seenReleaseIds = db.seenReleaseIds.slice(-1000);
     }
     
     if (updated) {
@@ -178,18 +221,62 @@ function markReleasesAsSeen(releaseIds) {
     }
 }
 
-// --------------------------------------------------------------------------
-// Helper: Update app settings (theme, mode, colors, playback platform)
-// --------------------------------------------------------------------------
+function pushAccentColorHistory(color) {
+    const db = getDatabase();
+    if (!Array.isArray(db.accentColorHistory)) db.accentColorHistory = [];
+    if (!color) return;
+    const last = db.accentColorHistory[db.accentColorHistory.length - 1];
+    if (last !== color) {
+        db.accentColorHistory.push(color);
+        if (db.accentColorHistory.length > 50) db.accentColorHistory.shift();
+        saveDatabase(db);
+    }
+}
+
+function popAccentColorHistory() {
+    const db = getDatabase();
+    if (!Array.isArray(db.accentColorHistory) || db.accentColorHistory.length === 0) return null;
+    const prev = db.accentColorHistory.pop();
+    saveDatabase(db);
+    return prev;
+}
+
+function getAccentColorHistoryCount() {
+    const db = getDatabase();
+    return Array.isArray(db.accentColorHistory) ? db.accentColorHistory.length : 0;
+}
+
+function pushBgColorHistory(color) {
+    const db = getDatabase();
+    if (!Array.isArray(db.bgColorHistory)) db.bgColorHistory = [];
+    if (!color) return;
+    const last = db.bgColorHistory[db.bgColorHistory.length - 1];
+    if (last !== color) {
+        db.bgColorHistory.push(color);
+        if (db.bgColorHistory.length > 50) db.bgColorHistory.shift();
+        saveDatabase(db);
+    }
+}
+
+function popBgColorHistory() {
+    const db = getDatabase();
+    if (!Array.isArray(db.bgColorHistory) || db.bgColorHistory.length === 0) return null;
+    const prev = db.bgColorHistory.pop();
+    saveDatabase(db);
+    return prev;
+}
+
+function getBgColorHistoryCount() {
+    const db = getDatabase();
+    return Array.isArray(db.bgColorHistory) ? db.bgColorHistory.length : 0;
+}
+
 function updateAppSettings(partialSettings) {
     const db = getDatabase();
     db.settings = { ...db.settings, ...partialSettings };
     saveDatabase(db);
 }
 
-// --------------------------------------------------------------------------
-// Helper: Get saved Spotify Web API credentials from database / localStorage
-// --------------------------------------------------------------------------
 function getSavedCredentials() {
     const db = getDatabase();
     const clientId = (db.credentials && db.credentials.clientId) || localStorage.getItem('spotify_client_id') || '';
@@ -200,9 +287,6 @@ function getSavedCredentials() {
     };
 }
 
-// --------------------------------------------------------------------------
-// Helper: Save Spotify API credentials to database and localStorage
-// --------------------------------------------------------------------------
 function saveSpotifyCredentials(clientId, clientSecret) {
     const db = getDatabase();
     const cleanId = (clientId || '').trim();
@@ -220,25 +304,18 @@ function saveSpotifyCredentials(clientId, clientSecret) {
     if (cleanSecret) localStorage.setItem('spotify_client_secret', cleanSecret);
     else localStorage.removeItem('spotify_client_secret');
 
-    // Invalidate cached token in spotify-api.js if present
     if (typeof resetSpotifyTokenCache === 'function') {
         resetSpotifyTokenCache();
     }
 }
 
-// --------------------------------------------------------------------------
-// Helper: Clear Spotify API credentials from database and localStorage
-// --------------------------------------------------------------------------
 function clearSpotifyCredentials() {
     saveSpotifyCredentials('', '');
     localStorage.removeItem('spotify_auth_method');
 }
 
-// --------------------------------------------------------------------------
-// PIN Lockout Tracking: 5 attempts max -> 7-day device lockout
-// --------------------------------------------------------------------------
 const PIN_MAX_ATTEMPTS = 5;
-const PIN_LOCKOUT_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+const PIN_LOCKOUT_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getPinLockoutStatus() {
     const lockoutUntilStr = localStorage.getItem('spotify_pin_lockout_until');
@@ -256,7 +333,6 @@ function getPinLockoutStatus() {
                 lockoutUntil
             };
         } else {
-            // Lockout period has elapsed, reset attempts
             resetPinAttempts();
         }
     }
@@ -299,3 +375,239 @@ function resetPinAttempts() {
     localStorage.removeItem('spotify_pin_lockout_until');
 }
 
+// --------------------------------------------------------------------------
+// Function: Format release date to day/month/year (DD/MM/YYYY)
+// --------------------------------------------------------------------------
+function formatReleaseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    const parts = dateStr.trim().split('-');
+    if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+    if (parts.length === 2) {
+        const [year, month] = parts;
+        return `${month.padStart(2, '0')}/${year}`;
+    }
+    return dateStr;
+}
+
+// --------------------------------------------------------------------------
+// Function: Safely parse date strings into local date objects avoiding UTC shift
+// --------------------------------------------------------------------------
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    if (parts.length >= 3) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    if (parts.length === 2) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+    }
+    return new Date(parseInt(parts[0], 10), 0, 1);
+}
+
+// --------------------------------------------------------------------------
+// Function: Calculate accurate calendar age in days for music releases
+// --------------------------------------------------------------------------
+function getReleaseAgeInDays(releaseDateStr, precision) {
+    if (!releaseDateStr) return 999;
+    let cleanDateStr = releaseDateStr;
+    if (precision === 'year' && !cleanDateStr.includes('-')) cleanDateStr += '-01-01';
+    else if (precision === 'month' && cleanDateStr.split('-').length === 2) cleanDateStr += '-01';
+
+    const now = new Date();
+    const relDate = parseLocalDate(cleanDateStr);
+    if (!relDate || isNaN(relDate.getTime())) return 999;
+
+    // Normalize both to local midnight to compare calendar days accurately
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const relMidnight = new Date(relDate.getFullYear(), relDate.getMonth(), relDate.getDate()).getTime();
+
+    return Math.round((todayMidnight - relMidnight) / (1000 * 60 * 60 * 24));
+}
+
+// --------------------------------------------------------------------------
+// Function: Export all application data to a single JSON backup file
+// --------------------------------------------------------------------------
+function exportDatabaseToFile() {
+    const db = getDatabase();
+    const exportData = {
+        app: 'what-new-songs',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        artists: Array.isArray(db.artists) ? db.artists : [],
+        favorites: Array.isArray(db.favorites) ? db.favorites : [],
+        pinnedArtists: Array.isArray(db.pinnedArtists) ? db.pinnedArtists : [],
+        favoriteArtists: Array.isArray(db.favoriteArtists) ? db.favoriteArtists : [],
+        seenReleaseIds: Array.isArray(db.seenReleaseIds) ? db.seenReleaseIds : [],
+        settings: db.settings || {
+            mode: 'timeline',
+            theme: 'dark',
+            color: '#4169E1',
+            bgColor: '#121212',
+            platform: 'spotify'
+        },
+        credentials: db.credentials || {
+            clientId: '',
+            clientSecret: ''
+        },
+        accentColorHistory: Array.isArray(db.accentColorHistory) ? db.accentColorHistory : [],
+        bgColorHistory: Array.isArray(db.bgColorHistory) ? db.bgColorHistory : []
+    };
+
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = `what-new-songs-backup-${dateStr}.json`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return { success: true, fileName };
+}
+
+// --------------------------------------------------------------------------
+// Function: Validate and import application data from an uploaded file
+// --------------------------------------------------------------------------
+function validateAndImportDatabase(rawContent) {
+    if (!rawContent || typeof rawContent !== 'string') {
+        return { success: false, error: 'Error importing data: The file is empty or invalid.' };
+    }
+
+    let parsed;
+    try {
+        parsed = JSON.parse(rawContent);
+    } catch (e) {
+        return { success: false, error: 'Error importing data: The file does not contain valid JSON.' };
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { success: false, error: 'Error importing data: File structure does not make sense.' };
+    }
+
+    // Validate artists array
+    if (parsed.artists !== undefined) {
+        if (!Array.isArray(parsed.artists)) {
+            return { success: false, error: 'Error importing data: Artists data is corrupted.' };
+        }
+        for (let i = 0; i < parsed.artists.length; i++) {
+            const a = parsed.artists[i];
+            if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !a.id.trim() || typeof a.name !== 'string' || !a.name.trim()) {
+                return { success: false, error: 'Error importing data: Artist entries are missing required fields or corrupted.' };
+            }
+        }
+    }
+
+    // Validate favorites
+    if (parsed.favorites !== undefined) {
+        if (!Array.isArray(parsed.favorites) || !parsed.favorites.every(id => typeof id === 'string')) {
+            return { success: false, error: 'Error importing data: Favorites list is corrupted.' };
+        }
+    }
+
+    // Validate pinnedArtists
+    if (parsed.pinnedArtists !== undefined) {
+        if (!Array.isArray(parsed.pinnedArtists) || !parsed.pinnedArtists.every(id => typeof id === 'string')) {
+            return { success: false, error: 'Error importing data: Pinned artists list is corrupted.' };
+        }
+    }
+
+    // Validate favoriteArtists
+    if (parsed.favoriteArtists !== undefined) {
+        if (!Array.isArray(parsed.favoriteArtists) || !parsed.favoriteArtists.every(id => typeof id === 'string')) {
+            return { success: false, error: 'Error importing data: Favorite artists list is corrupted.' };
+        }
+    }
+
+    // Validate seenReleaseIds
+    if (parsed.seenReleaseIds !== undefined) {
+        if (!Array.isArray(parsed.seenReleaseIds) || !parsed.seenReleaseIds.every(id => typeof id === 'string')) {
+            return { success: false, error: 'Error importing data: Seen releases list is corrupted.' };
+        }
+    }
+
+    // Validate settings
+    if (parsed.settings !== undefined) {
+        if (!parsed.settings || typeof parsed.settings !== 'object' || Array.isArray(parsed.settings)) {
+            return { success: false, error: 'Error importing data: Settings format does not make sense.' };
+        }
+        if (parsed.settings.mode && !['timeline', 'list'].includes(parsed.settings.mode)) {
+            return { success: false, error: 'Error importing data: View mode setting is invalid.' };
+        }
+        if (parsed.settings.theme && !['dark', 'light', 'custom'].includes(parsed.settings.theme)) {
+            return { success: false, error: 'Error importing data: Theme setting is invalid.' };
+        }
+        if (parsed.settings.platform && !['spotify', 'apple', 'youtube'].includes(parsed.settings.platform)) {
+            return { success: false, error: 'Error importing data: Music platform setting is invalid.' };
+        }
+    }
+
+    // Validate credentials
+    if (parsed.credentials !== undefined) {
+        if (!parsed.credentials || typeof parsed.credentials !== 'object' || Array.isArray(parsed.credentials)) {
+            return { success: false, error: 'Error importing data: Credentials format does not make sense.' };
+        }
+        if (parsed.credentials.clientId !== undefined && typeof parsed.credentials.clientId !== 'string') {
+            return { success: false, error: 'Error importing data: Client ID must be a string.' };
+        }
+        if (parsed.credentials.clientSecret !== undefined && typeof parsed.credentials.clientSecret !== 'string') {
+            return { success: false, error: 'Error importing data: Client Secret must be a string.' };
+        }
+    }
+
+    // Validation succeeded — build safe database state
+    const currentDb = getDatabase();
+    const newDb = {
+        artists: Array.isArray(parsed.artists) ? parsed.artists.map(a => ({
+            id: a.id.trim(),
+            name: a.name.trim(),
+            image: typeof a.image === 'string' ? a.image : ''
+        })) : currentDb.artists,
+        favorites: Array.isArray(parsed.favorites) ? parsed.favorites : currentDb.favorites,
+        pinnedArtists: Array.isArray(parsed.pinnedArtists) ? parsed.pinnedArtists : currentDb.pinnedArtists,
+        favoriteArtists: Array.isArray(parsed.favoriteArtists) ? parsed.favoriteArtists : currentDb.favoriteArtists,
+        seenReleaseIds: Array.isArray(parsed.seenReleaseIds) ? parsed.seenReleaseIds : currentDb.seenReleaseIds,
+        accentColorHistory: Array.isArray(parsed.accentColorHistory) ? parsed.accentColorHistory : (currentDb.accentColorHistory || []),
+        bgColorHistory: Array.isArray(parsed.bgColorHistory) ? parsed.bgColorHistory : (currentDb.bgColorHistory || []),
+        settings: {
+            mode: (parsed.settings && ['timeline', 'list'].includes(parsed.settings.mode)) ? parsed.settings.mode : (currentDb.settings.mode || 'timeline'),
+            theme: (parsed.settings && ['dark', 'light', 'custom'].includes(parsed.settings.theme)) ? parsed.settings.theme : (currentDb.settings.theme || 'dark'),
+            color: (parsed.settings && typeof parsed.settings.color === 'string') ? parsed.settings.color : (currentDb.settings.color || '#4169E1'),
+            bgColor: (parsed.settings && typeof parsed.settings.bgColor === 'string') ? parsed.settings.bgColor : (currentDb.settings.bgColor || '#121212'),
+            platform: (parsed.settings && ['spotify', 'apple', 'youtube'].includes(parsed.settings.platform)) ? parsed.settings.platform : (currentDb.settings.platform || 'spotify')
+        },
+        credentials: {
+            clientId: (parsed.credentials && typeof parsed.credentials.clientId === 'string') ? parsed.credentials.clientId.trim() : (currentDb.credentials ? currentDb.credentials.clientId : ''),
+            clientSecret: (parsed.credentials && typeof parsed.credentials.clientSecret === 'string') ? parsed.credentials.clientSecret.trim() : (currentDb.credentials ? currentDb.credentials.clientSecret : '')
+        },
+        lastOpenedTimestamp: Date.now(),
+        previousSessionOpenedTimestamp: currentDb.previousSessionOpenedTimestamp || (Date.now() - 7 * 24 * 60 * 60 * 1000)
+    };
+
+    saveDatabase(newDb);
+
+    if (newDb.credentials.clientId) {
+        localStorage.setItem('spotify_client_id', newDb.credentials.clientId);
+    } else {
+        localStorage.removeItem('spotify_client_id');
+    }
+
+    if (newDb.credentials.clientSecret) {
+        localStorage.setItem('spotify_client_secret', newDb.credentials.clientSecret);
+    } else {
+        localStorage.removeItem('spotify_client_secret');
+    }
+
+    if (typeof resetSpotifyTokenCache === 'function') {
+        resetSpotifyTokenCache();
+    }
+
+    return { success: true, message: 'Success importing data' };
+}

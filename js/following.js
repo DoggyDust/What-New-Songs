@@ -1,19 +1,8 @@
-// ==========================================================================
-// FOLLOWING SCREEN CONTROLLER (following.html)
-// ==========================================================================
-// This script powers the Following artists screen:
-// 1. Lists all artists stored in the user's database.
-// 2. Provides quick filtering to find specific artists.
-// 3. Allows 1-click removal/unfollow with instant UI update.
-// 4. Clicking an artist opens a modal displaying their 5 most recent releases.
-// ==========================================================================
-
 let allFollowedArtists = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     loadFollowedArtists();
 
-    // Bind filter input
     const filterInput = document.getElementById('followingFilterInput');
     if (filterInput) {
         filterInput.addEventListener('input', () => {
@@ -21,21 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Modal close button
     const closeBtn = document.getElementById('modalCloseBtn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeArtistModal);
     }
 });
 
-// --------------------------------------------------------------------------
-// Function: Load artists from database and render
-// --------------------------------------------------------------------------
 function loadFollowedArtists() {
     const db = getDatabase();
     allFollowedArtists = db.artists || [];
 
-    // Update count in header
     const countEl = document.getElementById('followingTotalCount');
     if (countEl) {
         countEl.textContent = `${allFollowedArtists.length} Artist${allFollowedArtists.length === 1 ? '' : 's'}`;
@@ -44,9 +28,6 @@ function loadFollowedArtists() {
     filterAndRenderArtists();
 }
 
-// --------------------------------------------------------------------------
-// Function: Filter artists list based on search box input
-// --------------------------------------------------------------------------
 function filterAndRenderArtists() {
     const container = document.getElementById('followingGrid');
     if (!container) return;
@@ -62,9 +43,6 @@ function filterAndRenderArtists() {
     renderArtistGrid(filtered, container);
 }
 
-// --------------------------------------------------------------------------
-// Function: Render artist cards into grid
-// --------------------------------------------------------------------------
 function renderArtistGrid(artists, container) {
     container.innerHTML = '';
 
@@ -80,27 +58,87 @@ function renderArtistGrid(artists, container) {
         return;
     }
 
-    artists.forEach(artist => {
+    const sorted = [...artists].sort((a, b) => {
+        const aPinned = isArtistPinned(a.id);
+        const bPinned = isArtistPinned(b.id);
+        if (aPinned && !bPinned) return -1;
+        if (!aPinned && bPinned) return 1;
+
+        const aFav = isArtistFavorited(a.id);
+        const bFav = isArtistFavorited(b.id);
+        if (aFav && !bFav) return -1;
+        if (!aFav && bFav) return 1;
+
+        return a.name.localeCompare(b.name);
+    });
+
+    sorted.forEach(artist => {
         const avatarUrl = artist.image || 'icon.png';
+        const pinned = isArtistPinned(artist.id);
+        const favorited = isArtistFavorited(artist.id);
 
         const card = document.createElement('div');
         card.className = 'artist-card';
 
         card.innerHTML = `
+            ${pinned ? '<div class="pinned-badge">📌 Pinned</div>' : ''}
+            ${favorited ? '<div class="fav-artist-badge">★</div>' : ''}
             <img src="${avatarUrl}" alt="${artist.name}" class="artist-avatar" loading="lazy">
             <div class="artist-name" title="${artist.name}">${escapeHtml(artist.name)}</div>
             <div class="artist-genre">Click to view releases</div>
-            <button class="btn btn-danger btn-sm" style="margin-top: 10px; width: 100%; border-radius: 9999px;">
-                Remove
-            </button>
+            <div class="artist-card-actions">
+                <button class="artist-action-btn pin-btn ${pinned ? 'is-pinned' : ''}" title="${pinned ? 'Unpin from top' : 'Pin to top'}">
+                    📌
+                </button>
+                <button class="artist-action-btn fav-artist-btn ${favorited ? 'is-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Favorite (auto-star releases)'}">
+                    ${favorited ? '★' : '☆'}
+                </button>
+                <button class="btn btn-danger btn-sm" style="flex: 1; border-radius: 9999px;">
+                    Remove
+                </button>
+            </div>
         `;
 
-        // Click card to view releases
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.artist-card-actions')) return;
             openArtistDiscographyModal(artist.id, artist.name);
         });
 
-        // Click remove button
+        const pinBtn = card.querySelector('.pin-btn');
+        pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nowPinned = togglePinArtist(artist.id);
+            showToast(nowPinned ? `Pinned ${artist.name} to top` : `Unpinned ${artist.name}`);
+            filterAndRenderArtists();
+        });
+
+        const favBtn = card.querySelector('.fav-artist-btn');
+        favBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nowFav = toggleFavoriteArtist(artist.id);
+            if (nowFav) {
+                try {
+                    const cachedStr = sessionStorage.getItem('cachedReleases');
+                    if (cachedStr) {
+                        const cached = JSON.parse(cachedStr);
+                        const db = getDatabase();
+                        let updated = false;
+                        cached.forEach(rel => {
+                            if (rel.artists && rel.artists.some(a => a.id === artist.id)) {
+                                if (!db.favorites.includes(rel.id)) {
+                                    db.favorites.push(rel.id);
+                                    updated = true;
+                                }
+                            }
+                        });
+                        if (updated) saveDatabase(db);
+                    }
+                } catch (_) {}
+            }
+            showToast(nowFav ? `★ ${artist.name} favorited — releases will automatically be favorited!` : `Removed ${artist.name} from favorites`);
+            filterAndRenderArtists();
+        });
+
         const removeBtn = card.querySelector('.btn-danger');
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -116,9 +154,6 @@ function renderArtistGrid(artists, container) {
     });
 }
 
-// --------------------------------------------------------------------------
-// Helper: Sanitize HTML text
-// --------------------------------------------------------------------------
 function escapeHtml(str) {
     if (!str) return '';
     return str

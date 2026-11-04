@@ -1,22 +1,8 @@
-// ==========================================================================
-// SETTINGS SCREEN CONTROLLER (settings.html)
-// ==========================================================================
-// This script powers the Settings screen:
-// 1. Manages View Mode selection (Timeline vs 30-Day List).
-// 2. Customizes Theme (Dark, Light, or Custom color).
-// 3. Customizes Accent/Button color with instant live-preview and Undo option.
-// 4. Sets preferred music playback platform (Spotify, Apple Music, YouTube Music).
-// 5. Diagnostics test to verify Spotify API connection status.
-// ==========================================================================
-
 document.addEventListener('DOMContentLoaded', () => {
     loadCurrentSettingsIntoForm();
     bindSettingsEvents();
 });
 
-// --------------------------------------------------------------------------
-// Function: Populate form controls with saved database values
-// --------------------------------------------------------------------------
 function loadCurrentSettingsIntoForm() {
     const db = getDatabase();
     const settings = db.settings || {};
@@ -27,31 +13,30 @@ function loadCurrentSettingsIntoForm() {
     const colorPicker = document.getElementById('settingColorPicker');
     const bgPicker = document.getElementById('settingBgPicker');
     const customBgSection = document.getElementById('customBgSection');
-    const undoBtn = document.getElementById('settingUndoColorBtn');
+    const undoColorBtn = document.getElementById('settingUndoColorBtn');
+    const undoBgColorBtn = document.getElementById('settingUndoBgColorBtn');
 
     if (modeSelect) modeSelect.value = settings.mode || 'timeline';
     if (themeSelect) themeSelect.value = settings.theme || 'dark';
     if (platformSelect) platformSelect.value = settings.platform || 'spotify';
-    if (colorPicker) colorPicker.value = settings.color || '#007BFF';
+    if (colorPicker) colorPicker.value = settings.color || '#4169E1';
     if (bgPicker) bgPicker.value = settings.bgColor || '#121212';
 
-    // Show custom background picker only when custom theme is selected
     if (customBgSection) {
         customBgSection.style.display = (settings.theme === 'custom') ? 'flex' : 'none';
     }
 
-    // Show undo button if previous settings exist
-    if (undoBtn) {
-        undoBtn.style.display = db.previousSettings ? 'inline-flex' : 'none';
+    if (undoColorBtn) {
+        undoColorBtn.style.display = (typeof getAccentColorHistoryCount === 'function' && getAccentColorHistoryCount() > 0) ? 'inline-flex' : 'none';
     }
 
-    // Populate Spotify Credentials section
+    if (undoBgColorBtn) {
+        undoBgColorBtn.style.display = (typeof getBgColorHistoryCount === 'function' && getBgColorHistoryCount() > 0) ? 'inline-flex' : 'none';
+    }
+
     loadSpotifyCredentialsIntoSettings();
 }
 
-// --------------------------------------------------------------------------
-// Function: Populate and update the Spotify Credentials section in Settings
-// --------------------------------------------------------------------------
 function loadSpotifyCredentialsIntoSettings() {
     const active = typeof getActiveSpotifyCredentials === 'function' ? getActiveSpotifyCredentials() : { clientId: '', clientSecret: '', isBuiltin: false };
     const saved = typeof getSavedCredentials === 'function' ? getSavedCredentials() : { clientId: '', clientSecret: '' };
@@ -75,18 +60,14 @@ function loadSpotifyCredentialsIntoSettings() {
 
     if (hasCustom) {
         if (statusBadge) {
-            if (authMethod === 'pin') {
-                statusBadge.textContent = `🟢 ${envLabel} (PIN Unlocked)`;
-            } else {
-                statusBadge.textContent = `🟢 ${envLabel} (Custom Keys)`;
-            }
-            statusBadge.style.backgroundColor = 'rgba(29, 185, 84, 0.2)';
-            statusBadge.style.color = '#1DB954';
+            statusBadge.textContent = authMethod === 'pin' ? `🟢 ${envLabel} (PIN Unlocked)` : `🟢 ${envLabel} (Custom Keys)`;
+            statusBadge.style.backgroundColor = 'rgba(65, 105, 225, 0.2)';
+            statusBadge.style.color = 'var(--primary-color)';
         }
         if (notice) {
             notice.textContent = authMethod === 'pin'
                 ? 'Connected via access PIN. Credentials stored safely on your device.'
-                : 'Your custom Spotify Developer credentials are saved safely on this device (localStorage).';
+                : 'Your custom Spotify Developer credentials are saved safely on this device.';
         }
     } else if (lockout.isLocked) {
         if (statusBadge) {
@@ -109,19 +90,16 @@ function loadSpotifyCredentialsIntoSettings() {
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Bind change events to all inputs and diagnostic buttons
-// --------------------------------------------------------------------------
 function bindSettingsEvents() {
     const modeSelect = document.getElementById('settingModeSelect');
     const themeSelect = document.getElementById('settingThemeSelect');
     const platformSelect = document.getElementById('settingPlatformSelect');
     const colorPicker = document.getElementById('settingColorPicker');
     const bgPicker = document.getElementById('settingBgPicker');
-    const undoBtn = document.getElementById('settingUndoColorBtn');
+    const undoColorBtn = document.getElementById('settingUndoColorBtn');
+    const undoBgColorBtn = document.getElementById('settingUndoBgColorBtn');
     const testConnBtn = document.getElementById('testConnectionBtn');
 
-    // View Mode Change
     if (modeSelect) {
         modeSelect.addEventListener('change', () => {
             updateAppSettings({ mode: modeSelect.value });
@@ -129,7 +107,6 @@ function bindSettingsEvents() {
         });
     }
 
-    // Theme Change (Dark, Light, Custom)
     if (themeSelect) {
         themeSelect.addEventListener('change', () => {
             const val = themeSelect.value;
@@ -144,7 +121,6 @@ function bindSettingsEvents() {
         });
     }
 
-    // Music Service Selection (Spotify, Apple Music, YouTube Music)
     if (platformSelect) {
         platformSelect.addEventListener('change', () => {
             updateAppSettings({ platform: platformSelect.value });
@@ -152,7 +128,6 @@ function bindSettingsEvents() {
         });
     }
 
-    // Primary Accent Color Picker (With Real-Time Preview & Undo History Backup)
     if (colorPicker) {
         colorPicker.addEventListener('input', () => {
             const root = document.documentElement;
@@ -167,45 +142,78 @@ function bindSettingsEvents() {
         });
 
         colorPicker.addEventListener('change', () => {
-            backupCurrentSettingsForUndo();
+            const db = getDatabase();
+            const currentColor = (db.settings && db.settings.color) || '#4169E1';
+            if (typeof pushAccentColorHistory === 'function') {
+                pushAccentColorHistory(currentColor);
+            }
             updateAppSettings({ color: colorPicker.value });
             applyThemeFromSettings();
             
-            const undo = document.getElementById('settingUndoColorBtn');
-            if (undo) undo.style.display = 'inline-flex';
+            if (undoColorBtn) undoColorBtn.style.display = 'inline-flex';
             showToast('Accent color updated!');
         });
     }
 
-    // Custom Background Color Picker
-    if (bgPicker) {
-        bgPicker.addEventListener('change', () => {
-            backupCurrentSettingsForUndo();
-            updateAppSettings({ bgColor: bgPicker.value });
-            applyThemeFromSettings();
-
-            const undo = document.getElementById('settingUndoColorBtn');
-            if (undo) undo.style.display = 'inline-flex';
-            showToast('Background color updated!');
-        });
-    }
-
-    // Undo Color Changes
-    if (undoBtn) {
-        undoBtn.addEventListener('click', () => {
-            const db = getDatabase();
-            if (db.previousSettings) {
-                db.settings = { ...db.previousSettings };
-                db.previousSettings = null;
-                saveDatabase(db);
-                loadCurrentSettingsIntoForm();
-                applyThemeFromSettings();
-                showToast('Reverted color changes.');
+    if (undoColorBtn) {
+        undoColorBtn.addEventListener('click', () => {
+            if (typeof popAccentColorHistory === 'function') {
+                const prev = popAccentColorHistory();
+                if (prev) {
+                    updateAppSettings({ color: prev });
+                    if (colorPicker) colorPicker.value = prev;
+                    applyThemeFromSettings();
+                    if (getAccentColorHistoryCount() === 0) {
+                        undoColorBtn.style.display = 'none';
+                    }
+                    showToast('Reverted accent color change.');
+                } else {
+                    undoColorBtn.style.display = 'none';
+                }
             }
         });
     }
 
-    // Toggle Secret Visibility in Settings
+    if (bgPicker) {
+        bgPicker.addEventListener('input', () => {
+            const root = document.documentElement;
+            const chosenBg = bgPicker.value;
+            root.style.setProperty('--bg-main', chosenBg);
+        });
+
+        bgPicker.addEventListener('change', () => {
+            const db = getDatabase();
+            const currentBg = (db.settings && db.settings.bgColor) || '#121212';
+            if (typeof pushBgColorHistory === 'function') {
+                pushBgColorHistory(currentBg);
+            }
+            updateAppSettings({ bgColor: bgPicker.value });
+            applyThemeFromSettings();
+
+            if (undoBgColorBtn) undoBgColorBtn.style.display = 'inline-flex';
+            showToast('Background color updated!');
+        });
+    }
+
+    if (undoBgColorBtn) {
+        undoBgColorBtn.addEventListener('click', () => {
+            if (typeof popBgColorHistory === 'function') {
+                const prev = popBgColorHistory();
+                if (prev) {
+                    updateAppSettings({ bgColor: prev });
+                    if (bgPicker) bgPicker.value = prev;
+                    applyThemeFromSettings();
+                    if (getBgColorHistoryCount() === 0) {
+                        undoBgColorBtn.style.display = 'none';
+                    }
+                    showToast('Reverted background color change.');
+                } else {
+                    undoBgColorBtn.style.display = 'none';
+                }
+            }
+        });
+    }
+
     const toggleSecretBtn = document.getElementById('settingToggleSecretBtn');
     if (toggleSecretBtn) {
         toggleSecretBtn.addEventListener('click', () => {
@@ -217,7 +225,6 @@ function bindSettingsEvents() {
         });
     }
 
-    // Save Credentials in Settings
     const saveCredBtn = document.getElementById('saveCredentialsSettingBtn');
     if (saveCredBtn) {
         saveCredBtn.addEventListener('click', async () => {
@@ -248,7 +255,6 @@ function bindSettingsEvents() {
         });
     }
 
-    // Clear Stored Credentials in Settings
     const clearCredBtn = document.getElementById('clearCredentialsSettingBtn');
     if (clearCredBtn) {
         clearCredBtn.addEventListener('click', () => {
@@ -258,24 +264,76 @@ function bindSettingsEvents() {
         });
     }
 
-    // Test Spotify Connection Button
     if (testConnBtn) {
         testConnBtn.addEventListener('click', testSpotifyConnection);
     }
+
+    const exportBtn = document.getElementById('exportDataBtn');
+    const importBtn = document.getElementById('importDataBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const importNotice = document.getElementById('importStatusNotice');
+
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            try {
+                const res = exportDatabaseToFile();
+                showToast(`Data exported to ${res.fileName}`, 'success');
+            } catch (err) {
+                showToast('Failed to export data.', 'error');
+            }
+        });
+    }
+
+    if (importBtn && importFileInput) {
+        importBtn.addEventListener('click', () => {
+            importFileInput.value = '';
+            importFileInput.click();
+        });
+
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target.result;
+                const result = validateAndImportDatabase(content);
+
+                if (importNotice) {
+                    importNotice.style.display = 'block';
+                    if (result.success) {
+                        importNotice.className = 'import-notice-success';
+                        importNotice.textContent = '✓ Success importing data';
+                    } else {
+                        importNotice.className = 'import-notice-error';
+                        importNotice.textContent = '✕ ' + (result.error || 'Error importing data');
+                    }
+                }
+
+                if (result.success) {
+                    showToast('Success importing data', 'success');
+                    loadCurrentSettingsIntoForm();
+                    applyThemeFromSettings();
+                    updateNavFollowingBadge();
+                } else {
+                    showToast(result.error || 'Error importing data', 'error');
+                }
+            };
+
+            reader.onerror = () => {
+                if (importNotice) {
+                    importNotice.style.display = 'block';
+                    importNotice.className = 'import-notice-error';
+                    importNotice.textContent = '✕ Error importing data: Could not read file.';
+                }
+                showToast('Error importing data', 'error');
+            };
+
+            reader.readAsText(file);
+        });
+    }
 }
 
-// --------------------------------------------------------------------------
-// Function: Backup current settings to support 1-click Undo
-// --------------------------------------------------------------------------
-function backupCurrentSettingsForUndo() {
-    const db = getDatabase();
-    db.previousSettings = JSON.parse(JSON.stringify(db.settings));
-    saveDatabase(db);
-}
-
-// --------------------------------------------------------------------------
-// Function: Test Spotify API Credentials & Connectivity
-// --------------------------------------------------------------------------
 async function testSpotifyConnection() {
     const statusEl = document.getElementById('connectionStatusText');
     const testBtn = document.getElementById('testConnectionBtn');
@@ -304,9 +362,9 @@ async function testSpotifyConnection() {
         const test = await testSpotifyCredentials(creds.clientId, creds.clientSecret);
         if (test.success) {
             if (statusEl) {
-            const credType = creds.isBuiltin ? 'app credentials' : 'custom credentials';
+                const credType = creds.isBuiltin ? 'app credentials' : 'custom credentials';
                 statusEl.textContent = `🟢 Connected successfully using ${credType}!`;
-                statusEl.style.color = '#1DB954';
+                statusEl.style.color = 'var(--primary-color)';
             }
             showToast('Spotify connection verified!', 'success');
         } else {

@@ -344,27 +344,102 @@ async function getArtistById(artistId) {
 }
 
 // --------------------------------------------------------------------------
-// Function: Fetch albums and singles for a specific artist
+// Rate-limit tracker for direct artist endpoint
 // --------------------------------------------------------------------------
-async function fetchArtistReleases(artistId, limit = 50) {
+let directAlbumsBlockedUntil = 0;
+
+// --------------------------------------------------------------------------
+// Function: Fetch albums and singles for a specific artist (with search fallback)
+// --------------------------------------------------------------------------
+async function fetchArtistReleases(artistId, limit = 50, artistName = '') {
     const token = await getSpotifyToken();
     if (!token) return [];
 
-    try {
-        // Request both albums and singles
-        const url = `${SPOTIFY_API_BASE}/artists/${artistId}/albums?include_groups=album,single&limit=${limit}`;
-        const response = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        return data.items || [];
-    } catch (error) {
-        console.error(`// Spotify API Error: Failed fetching releases for artist ${artistId}:`, error);
-        return [];
+    // Resolve artist name from local database if not passed
+    if (!artistName && typeof getDatabase === 'function') {
+        const db = getDatabase();
+        const found = db.artists && db.artists.find(a => a.id === artistId);
+        if (found) artistName = found.name;
     }
+
+    const now = Date.now();
+
+    // 1. Try direct Spotify artist endpoint if not currently quota-blocked
+    if (now >= directAlbumsBlockedUntil) {
+        try {
+            const url = `${SPOTIFY_API_BASE}/artists/${artistId}/albums?include_groups=single,album,appears_on&limit=${Math.min(limit, 50)}`;
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.items && data.items.length > 0) {
+                    return data.items;
+                }
+            } else if (response.status === 429) {
+                const retrySec = parseInt(response.headers.get('retry-after') || '300', 10);
+                directAlbumsBlockedUntil = Date.now() + (Math.max(retrySec, 60) * 1000);
+                console.warn(`// Spotify direct endpoint rate-limited (429). Using search fallback.`);
+            } else if (response.status === 401) {
+                resetSpotifyTokenCache();
+            }
+        } catch (error) {
+            console.warn(`// Spotify API direct fetch error for ${artistId}:`, error);
+        }
+    }
+
+    // 2. Resilient fallback: Search endpoint for artist releases
+    // Spotify search endpoint has independent quotas and returns both singles and albums
+    if (artistName) {
+        try {
+            const cleanName = artistName.replace(/["\\]/g, '').trim();
+            const searchUrl = `${SPOTIFY_API_BASE}/search?q=${encodeURIComponent('artist:"' + cleanName + '"')}&type=album&limit=10`;
+            const searchRes = await fetch(searchUrl, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (searchRes.ok) {
+                const searchData = await searchRes.json();
+                const items = (searchData.albums && searchData.albums.items) ? searchData.albums.items : [];
+                const matching = items.filter(it => it.artists && it.artists.some(a => 
+                    (artistId && a.id === artistId) || 
+                    (a.name.toLowerCase() === cleanName.toLowerCase())
+                ));
+
+                // If first page returned 10 items, fetch offset=10 to discover more recent drops
+                if (items.length === 10 && limit > 10) {
+                    try {
+                        const page2Url = `${SPOTIFY_API_BASE}/search?q=${encodeURIComponent('artist:"' + cleanName + '"')}&type=album&limit=10&offset=10`;
+                        const page2Res = await fetch(page2Url, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (page2Res.ok) {
+                            const page2Data = await page2Res.json();
+                            const page2Items = (page2Data.albums && page2Data.albums.items) ? page2Data.albums.items : [];
+                            page2Items.forEach(it => {
+                                if (it.artists && it.artists.some(a => (artistId && a.id === artistId) || a.name.toLowerCase() === cleanName.toLowerCase())) {
+                                    if (!matching.some(m => m.id === it.id)) {
+                                        matching.push(it);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (_) {}
+                }
+
+                if (matching.length > 0) {
+                    return matching;
+                }
+            } else if (searchRes.status === 401) {
+                resetSpotifyTokenCache();
+            }
+        } catch (searchErr) {
+            console.error(`// Spotify search fallback error for ${artistName}:`, searchErr);
+        }
+    }
+
+    return [];
 }
 
 // --------------------------------------------------------------------------
@@ -380,16 +455,20 @@ async function fetchAllFollowedReleases(followedArtists) {
 
     let combinedReleases = [];
 
-    // Fetch concurrently in batches of 5 to avoid Spotify rate limits
-    const BATCH_SIZE = 5;
+    // Fetch in small batches with brief delay to prevent triggering rate limits
+    const BATCH_SIZE = 3;
     for (let i = 0; i < followedArtists.length; i += BATCH_SIZE) {
         const batch = followedArtists.slice(i, i + BATCH_SIZE);
-        const batchPromises = batch.map(artist => fetchArtistReleases(artist.id, 20));
+        const batchPromises = batch.map(artist => fetchArtistReleases(artist.id, 20, artist.name));
         const batchResults = await Promise.all(batchPromises);
 
         batchResults.forEach(releases => {
             combinedReleases.push(...releases);
         });
+
+        if (i + BATCH_SIZE < followedArtists.length) {
+            await new Promise(r => setTimeout(r, 60));
+        }
     }
 
     // Deduplicate releases by album/single Spotify ID

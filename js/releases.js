@@ -1,32 +1,13 @@
-// ==========================================================================
-// RELEASES PAGE CONTROLLER (index.html)
-// ==========================================================================
-// This script runs when opening the main Releases screen:
-// 1. Checks Spotify automatically on launch for new drops from followed artists.
-// 2. Detects any unacknowledged drops and shows a celebratory alert banner.
-// 3. Categorizes releases into tabs (New Releases, Past Releases, Favorites).
-// 4. Handles audio playback redirection, favorites starring, and live search.
-// ==========================================================================
-
 let allLoadedReleases = [];
-let activeTab = 'new'; // 'new', 'past', 'list', or 'favorites'
+let activeTab = 'new';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Bind search/filter events
     bindReleasesEvents();
-    
-    // Check if we need to adjust tab buttons based on view mode (Timeline vs 30-Day List)
     configureModeTabs();
-
-    // Check for releases on app open
     await checkAndLoadReleases();
 });
 
-// --------------------------------------------------------------------------
-// Function: Attach click handlers to tabs, search filter, and dismiss buttons
-// --------------------------------------------------------------------------
 function bindReleasesEvents() {
-    // Tab switching buttons
     document.querySelectorAll('.filter-tab').forEach(tabBtn => {
         tabBtn.addEventListener('click', (e) => {
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -36,7 +17,6 @@ function bindReleasesEvents() {
         });
     });
 
-    // In-page search filter for quick browsing
     const filterInput = document.getElementById('releaseFilterInput');
     if (filterInput) {
         filterInput.addEventListener('input', () => {
@@ -44,20 +24,16 @@ function bindReleasesEvents() {
         });
     }
 
-    // Modal close button
     const closeBtn = document.getElementById('modalCloseBtn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closeArtistModal);
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Adjust tab visibility according to the user's view mode setting
-// --------------------------------------------------------------------------
 function configureModeTabs() {
     const db = getDatabase();
     const mode = (db.settings && db.settings.mode) ? db.settings.mode : 'timeline';
-    
+
     const tabNew = document.getElementById('tabNew');
     const tabPast = document.getElementById('tabPast');
     const tabList = document.getElementById('tabList');
@@ -69,7 +45,6 @@ function configureModeTabs() {
         activeTab = 'new';
         if (tabNew) tabNew.classList.add('active');
     } else {
-        // List mode (Last 30 Days)
         if (tabNew) tabNew.style.display = 'none';
         if (tabPast) tabPast.style.display = 'none';
         if (tabList) tabList.style.display = 'inline-block';
@@ -78,16 +53,10 @@ function configureModeTabs() {
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Fetch and compare releases on app launch
-// --------------------------------------------------------------------------
-async function checkAndLoadReleases() {
+async function checkAndLoadReleases(forceRefresh = false) {
     const listContainer = document.getElementById('releasesList');
-    listContainer.innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text-secondary);">Checking Spotify for new drops...</p>';
-
     const db = getDatabase();
 
-    // Check if credentials are configured
     if (!hasSpotifyCredentials()) {
         listContainer.innerHTML = `
             <div class="empty-state">
@@ -100,7 +69,6 @@ async function checkAndLoadReleases() {
         return;
     }
 
-    // Check if user has added any artists yet
     if (!db.artists || db.artists.length === 0) {
         listContainer.innerHTML = `
             <div class="empty-state">
@@ -113,51 +81,78 @@ async function checkAndLoadReleases() {
         return;
     }
 
+    // Try rendering immediately from cached releases first for fast UI responsiveness
+    const cachedStr = sessionStorage.getItem('cachedReleases');
+    if (cachedStr && !forceRefresh) {
+        try {
+            const cached = JSON.parse(cachedStr);
+            if (Array.isArray(cached) && cached.length > 0) {
+                allLoadedReleases = cached;
+                autoFavoriteFromFavoritedArtists(allLoadedReleases);
+                detectBrandNewReleases(allLoadedReleases);
+                filterAndRenderCurrentTab();
+            }
+        } catch (_) { }
+    }
+
+    if (!allLoadedReleases || allLoadedReleases.length === 0) {
+        listContainer.innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text-secondary);">Checking Spotify for new drops...</p>';
+    }
+
     try {
-        // Fetch releases from Spotify for all followed artists
         allLoadedReleases = await fetchAllFollowedReleases(db.artists);
 
-        // Save in session cache
         sessionStorage.setItem('cachedReleases', JSON.stringify(allLoadedReleases));
 
-        // Detect brand-new drops since user last checked
+        autoFavoriteFromFavoritedArtists(allLoadedReleases);
+
         detectBrandNewReleases(allLoadedReleases);
 
-        // Render cards
         filterAndRenderCurrentTab();
     } catch (error) {
-        console.error('// Error loading releases:', error);
-        listContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
-                <h3>Failed to Load Releases</h3>
-                <p>Could not connect to Spotify. Check your internet connection or diagnostic settings.</p>
-                <button class="btn btn-primary" onclick="checkAndLoadReleases()">Retry</button>
-            </div>
-        `;
+        if (!allLoadedReleases || allLoadedReleases.length === 0) {
+            listContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>Failed to Load Releases</h3>
+                    <p>Could not connect to Spotify. Check your internet connection or diagnostic settings.</p>
+                    <button class="btn btn-primary" onclick="checkAndLoadReleases(true)">Retry</button>
+                </div>
+            `;
+        }
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Check for newly dropped tracks that user hasn't seen yet
-// --------------------------------------------------------------------------
+function autoFavoriteFromFavoritedArtists(releases) {
+    const db = getDatabase();
+    const favArtistIds = db.favoriteArtists || [];
+    if (favArtistIds.length === 0) return;
+
+    let updated = false;
+    releases.forEach(rel => {
+        if (rel.artists && rel.artists.some(a => favArtistIds.includes(a.id))) {
+            if (!db.favorites.includes(rel.id)) {
+                db.favorites.push(rel.id);
+                updated = true;
+            }
+        }
+    });
+
+    if (updated) {
+        saveDatabase(db);
+    }
+}
+
 function detectBrandNewReleases(releases) {
     const db = getDatabase();
     const seenIds = new Set(db.seenReleaseIds || []);
-    const now = new Date();
-    
-    // Find releases that dropped in the last 7 days AND have not been acknowledged
+
     const freshReleases = releases.filter(r => {
         if (seenIds.has(r.id)) return false;
-        
-        let releaseDateStr = r.release_date;
-        if (r.release_date_precision === 'year') releaseDateStr += '-01-01';
-        else if (r.release_date_precision === 'month') releaseDateStr += '-01';
-        
-        const relDate = new Date(releaseDateStr);
-        const diffDays = (now - relDate) / (1000 * 60 * 60 * 24);
-        
-        // Dropped within last 7 days or upcoming in next 5 days
+        const diffDays = (typeof getReleaseAgeInDays === 'function')
+            ? getReleaseAgeInDays(r.release_date, r.release_date_precision)
+            : 0;
+
         return diffDays >= -5 && diffDays <= 7;
     });
 
@@ -177,22 +172,23 @@ function detectBrandNewReleases(releases) {
 
         alertBanner.style.display = 'flex';
 
+        const dismissAlert = (e) => {
+            if (e) e.stopPropagation();
+            markReleasesAsSeen(freshReleases.map(r => r.id));
+            alertBanner.style.display = 'none';
+            filterAndRenderCurrentTab();
+        };
+
+        alertBanner.onclick = dismissAlert;
+
         if (dismissBtn) {
-            dismissBtn.onclick = () => {
-                // Mark these releases as seen in database
-                markReleasesAsSeen(freshReleases.map(r => r.id));
-                alertBanner.style.display = 'none';
-                filterAndRenderCurrentTab(); // Re-render to refresh "NEW" badges
-            };
+            dismissBtn.onclick = dismissAlert;
         }
     } else {
         alertBanner.style.display = 'none';
     }
 }
 
-// --------------------------------------------------------------------------
-// Function: Filter and render releases according to active tab and search query
-// --------------------------------------------------------------------------
 function filterAndRenderCurrentTab() {
     const listContainer = document.getElementById('releasesList');
     if (!listContainer) return;
@@ -201,41 +197,30 @@ function filterAndRenderCurrentTab() {
     const filterInput = document.getElementById('releaseFilterInput');
     const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
 
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
     let filtered = allLoadedReleases.filter(rel => {
-        let releaseDateStr = rel.release_date;
-        if (rel.release_date_precision === 'year') releaseDateStr += '-01-01';
-        else if (rel.release_date_precision === 'month') releaseDateStr += '-01';
+        const ageInDays = (typeof getReleaseAgeInDays === 'function')
+            ? getReleaseAgeInDays(rel.release_date, rel.release_date_precision)
+            : 0;
 
-        const releaseDate = new Date(releaseDateStr);
-        const ageInDays = (today - releaseDate) / (1000 * 60 * 60 * 24);
-
-        // Tab: New Releases (dropped in last 7 days or upcoming)
         if (activeTab === 'new') {
             return ageInDays >= -5 && ageInDays <= 7;
         }
 
-        // Tab: Past Releases (older than 7 days, up to 45 days)
         if (activeTab === 'past') {
             return ageInDays > 7 && ageInDays <= 45;
         }
 
-        // Tab: List (all releases in the last 30 days)
         if (activeTab === 'list') {
             return ageInDays >= -5 && ageInDays <= 30;
         }
 
-        // Tab: Favorites (only starred tracks)
         if (activeTab === 'favorites') {
-            return db.favorites.includes(rel.id);
+            return isReleaseFavorited(rel);
         }
 
         return true;
     });
 
-    // Apply live search text filter
     if (query) {
         filtered = filtered.filter(rel => {
             const matchesName = rel.name.toLowerCase().includes(query);
@@ -244,13 +229,9 @@ function filterAndRenderCurrentTab() {
         });
     }
 
-    // Render cards
     renderReleaseCards(filtered, listContainer);
 }
 
-// --------------------------------------------------------------------------
-// Function: Render list of release cards to the DOM
-// --------------------------------------------------------------------------
 function renderReleaseCards(releases, container) {
     container.innerHTML = '';
 
@@ -258,7 +239,7 @@ function renderReleaseCards(releases, container) {
         let msg = 'No releases found for this category.';
         if (activeTab === 'favorites') msg = 'You haven\'t favorited any releases yet. Star any release to save it here!';
         if (activeTab === 'new') msg = 'No new releases from your followed artists in the last 7 days.';
-        
+
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🎧</div>
@@ -273,65 +254,128 @@ function renderReleaseCards(releases, container) {
     const seenIds = new Set(db.seenReleaseIds || []);
     const preferredPlatform = (db.settings && db.settings.platform) ? db.settings.platform : 'spotify';
 
-    releases.forEach(rel => {
-        const coverImg = (rel.images && rel.images.length > 0) ? rel.images[0].url : 'icon.png';
-        const artistNames = rel.artists.map(a => a.name).join(', ');
-        const primaryArtist = rel.artists[0].name;
-        const isFav = db.favorites.includes(rel.id);
-        const isBrandNew = !seenIds.has(rel.id);
+    if (activeTab === 'new' || activeTab === 'list') {
+        const unseen = releases.filter(r => !seenIds.has(r.id));
+        const seen = releases.filter(r => seenIds.has(r.id));
 
-        const card = document.createElement('div');
-        card.className = 'release-card';
+        if (unseen.length > 0) {
+            unseen.forEach(rel => {
+                container.appendChild(buildReleaseCard(rel, db, seenIds, preferredPlatform));
+            });
 
-        card.innerHTML = `
-            <div class="release-main">
-                <img src="${coverImg}" alt="${rel.name}" class="album-cover" loading="lazy">
-                <div class="release-details">
-                    <div class="release-title-row">
-                        <span class="release-title">${escapeHtml(rel.name)}</span>
-                        ${isBrandNew ? '<span class="badge-new">NEW</span>' : ''}
-                        <span class="release-type-badge">${rel.album_type || 'single'}</span>
-                    </div>
-                    <div class="release-artists">${escapeHtml(artistNames)}</div>
-                    <div class="release-date">Released: ${rel.release_date}</div>
-                </div>
-            </div>
-            <div class="release-actions">
-                <button class="fav-btn ${isFav ? 'is-favorite' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
-                    ${isFav ? '★' : '☆'}
-                </button>
-                <button class="listen-btn" title="Open in ${preferredPlatform}">
-                    ▶ Play
-                </button>
-            </div>
-        `;
+            if (seen.length > 0) {
+                const divider = document.createElement('div');
+                divider.className = 'releases-divider';
+                divider.innerHTML = '<span class="releases-divider-label">Past 7 Days </span>';
+                container.appendChild(divider);
+            }
+        }
 
-        // Click card to open in preferred music service
-        card.querySelector('.release-main').addEventListener('click', () => {
-            openInMusicService(rel.external_urls.spotify, primaryArtist, rel.name, preferredPlatform);
+        seen.forEach(rel => {
+            container.appendChild(buildReleaseCard(rel, db, seenIds, preferredPlatform));
         });
-
-        // Click play button
-        card.querySelector('.listen-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openInMusicService(rel.external_urls.spotify, primaryArtist, rel.name, preferredPlatform);
+    } else {
+        releases.forEach(rel => {
+            container.appendChild(buildReleaseCard(rel, db, seenIds, preferredPlatform));
         });
-
-        // Click favorite star button
-        card.querySelector('.fav-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            const nowFav = toggleFavoriteRelease(rel.id);
-            showToast(nowFav ? `Added "${rel.name}" to Favorites!` : `Removed "${rel.name}" from Favorites.`);
-            filterAndRenderCurrentTab();
-        });
-
-        container.appendChild(card);
-    });
+    }
 }
 
-// --------------------------------------------------------------------------
-// Helper: Sanitize HTML text to prevent XSS injection
-// --------------------------------------------------------------------------
+function buildReleaseCard(rel, db, seenIds, preferredPlatform) {
+    const coverImg = (rel.images && rel.images.length > 0) ? rel.images[0].url : 'icon.png';
+    const artistNames = rel.artists.map(a => a.name).join(', ');
+    const primaryArtistObj = (rel.artists && rel.artists.length > 0) ? rel.artists[0] : { name: 'Unknown', id: '' };
+    const primaryArtist = primaryArtistObj.name || 'Unknown';
+    const isFav = isReleaseFavorited(rel);
+    const isBrandNew = !seenIds.has(rel.id);
+
+    // Look up artist avatar photo from followed artists list
+    let artistAvatar = '';
+    if (db && Array.isArray(db.artists)) {
+        const found = db.artists.find(a =>
+            (primaryArtistObj.id && a.id === primaryArtistObj.id) ||
+            (a.name && a.name.toLowerCase() === primaryArtist.toLowerCase())
+        );
+        if (found && found.image) {
+            artistAvatar = found.image;
+        }
+    }
+    if (!artistAvatar) {
+        artistAvatar = (rel.images && rel.images.length > 0) ? rel.images[rel.images.length - 1].url : coverImg;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'release-card';
+
+    let redNewBubble = '';
+    if (isBrandNew) {
+        redNewBubble = `
+            <span class="badge-new" title="New release — click to mark as seen">NEW</span>
+        `;
+    }
+
+    card.innerHTML = `
+        <div class="release-main">
+            <img src="${coverImg}" alt="${rel.name}" class="album-cover" loading="lazy">
+            <div class="release-details">
+                <div class="release-title-row">
+                    <span class="release-title">${escapeHtml(rel.name)}</span>
+                    ${redNewBubble}
+                    <span class="release-type-badge">${rel.album_type || 'single'}</span>
+                </div>
+                <div class="release-artists">${escapeHtml(artistNames)}</div>
+                <div class="release-date">Released: ${typeof formatReleaseDate === 'function' ? formatReleaseDate(rel.release_date) : rel.release_date}</div>
+            </div>
+        </div>
+        <div class="release-actions">
+            <button class="fav-btn ${isFav ? 'is-favorite' : ''}" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+                ${isFav ? '★' : '☆'}
+            </button>
+            <button class="listen-btn" title="Open in ${preferredPlatform}">
+                ▶ Play
+            </button>
+        </div>
+    `;
+
+    if (isBrandNew) {
+        const badgeEl = card.querySelector('.badge-new');
+        if (badgeEl) {
+            badgeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                markReleaseAsSeen(rel.id);
+                filterAndRenderCurrentTab();
+            });
+        }
+    }
+
+    card.querySelector('.release-main').addEventListener('click', () => {
+        if (isBrandNew) markReleaseAsSeen(rel.id);
+        openInMusicService(rel.external_urls.spotify, primaryArtist, rel.name, preferredPlatform);
+    });
+
+    card.querySelector('.listen-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isBrandNew) markReleaseAsSeen(rel.id);
+        openInMusicService(rel.external_urls.spotify, primaryArtist, rel.name, preferredPlatform);
+    });
+
+    card.querySelector('.fav-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nowFav = toggleFavoriteRelease(rel.id);
+        showToast(nowFav ? `Added "${rel.name}" to Favorites!` : `Removed "${rel.name}" from Favorites.`);
+        filterAndRenderCurrentTab();
+    });
+
+    return card;
+}
+
+function renderAllReleasesFromCache(releases) {
+    allLoadedReleases = releases;
+    autoFavoriteFromFavoritedArtists(allLoadedReleases);
+    detectBrandNewReleases(allLoadedReleases);
+    filterAndRenderCurrentTab();
+}
+
 function escapeHtml(str) {
     return str
         .replace(/&/g, "&amp;")

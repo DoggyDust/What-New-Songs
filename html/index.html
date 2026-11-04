@@ -78,7 +78,7 @@
         </header>
 
         <!-- Dynamic New Releases Alert Banner (shown only when fresh drops occur) -->
-        <div id="newReleaseAlertBanner" class="alert-banner" style="display: none;">
+        <div id="newReleaseAlertBanner" class="alert-banner" style="display: none;" title="Click anywhere to acknowledge all new releases">
             <div class="alert-banner-content">
                 <div class="alert-banner-icon">🎉</div>
                 <div>
@@ -87,7 +87,7 @@
                         track.</div>
                 </div>
             </div>
-            <button id="dismissAlertBtn" class="btn btn-secondary btn-sm">Acknowledge</button>
+            <button id="dismissAlertBtn" class="alert-tick-btn" title="Acknowledge and mark all as seen" aria-label="Mark all as seen">✓</button>
         </div>
 
         <!-- Filter Bar: Search within releases -->

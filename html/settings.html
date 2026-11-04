@@ -110,7 +110,10 @@
                     <h4>Custom Background Color</h4>
                     <p>Pick a custom background color for the application.</p>
                 </div>
-                <div class="setting-control">
+                <div class="setting-control" style="display: flex; align-items: center; gap: 8px;">
+                    <button id="settingUndoBgColorBtn" class="btn btn-secondary btn-sm" style="display: none;">
+                        ↩ Undo Background
+                    </button>
                     <input type="color" id="settingBgPicker" class="color-picker" value="#121212">
                 </div>
             </div>
@@ -121,11 +124,11 @@
                     <h4>Button & Accent Color</h4>
                     <p>Customize the primary highlight, active tabs, and button colors.</p>
                 </div>
-                <div class="setting-control">
+                <div class="setting-control" style="display: flex; align-items: center; gap: 8px;">
                     <button id="settingUndoColorBtn" class="btn btn-secondary btn-sm" style="display: none;">
                         ↩ Undo Color
                     </button>
-                    <input type="color" id="settingColorPicker" class="color-picker" value="#007BFF">
+                    <input type="color" id="settingColorPicker" class="color-picker" value="#4169E1">
                 </div>
             </div>
 
@@ -220,6 +223,26 @@
                         Test Connection
                     </button>
                 </div>
+            </div>
+
+            <!-- 8. Data Backup & Transfer (Export & Import) -->
+            <div class="setting-section" style="align-items: flex-start; flex-direction: column; gap: 14px;">
+                <div class="setting-info" style="width: 100%;">
+                    <h4>Data Backup & Transfer</h4>
+                    <p>Export your followed artists, favorites, and preferences to a single downloadable file, or import a backup file from another device.</p>
+                </div>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; width: 100%; align-items: center;">
+                    <button type="button" id="exportDataBtn" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📥</span> Export Data
+                    </button>
+                    <button type="button" id="importDataBtn" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span>📤</span> Import Data
+                    </button>
+                    <input type="file" id="importFileInput" accept=".json,application/json" style="display: none;">
+                </div>
+
+                <div id="importStatusNotice" style="display: none; font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: var(--radius-md); width: 100%;"></div>
             </div>
 
         </div>

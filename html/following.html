@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy"
         content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,22 +13,17 @@
     <title>What New Songs - Following</title>
     <link rel="icon" type="image/png" href="../icon.png">
     <link rel="apple-touch-icon" href="../icon.png">
-    <!-- Master Shared Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
 
-    <!-- =======================================================================
-         1. TOP NAVIGATION BAR (Shared across screens)
-         ======================================================================= -->
     <nav class="app-navbar">
         <a href="index.html" class="brand-section">
             <div class="brand-icon">🎵</div>
             <span class="brand-title">What New Songs</span>
         </a>
 
-        <!-- Screen Navigation Links (Desktop) -->
         <ul class="nav-links">
             <li>
                 <a href="index.html" class="nav-link">
@@ -59,12 +55,8 @@
         </div>
     </nav>
 
-    <!-- =======================================================================
-         2. MAIN FOLLOWING SCREEN CONTENT
-         ======================================================================= -->
     <main class="main-content">
 
-        <!-- Screen Header -->
         <header class="page-header">
             <div>
                 <h1 class="page-title">Followed Artists</h1>
@@ -76,20 +68,17 @@
             </div>
         </header>
 
-        <!-- Search / Filter within followed artists -->
         <div class="search-bar-wrapper">
             <input type="text" id="followingFilterInput" class="input-field"
                 placeholder="Filter followed artists by name...">
         </div>
 
-        <!-- Followed Artists Grid -->
         <div id="followingGrid" class="artist-grid">
             <div class="spinner"></div>
         </div>
 
     </main>
 
-    <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
         <a href="index.html" class="mobile-nav-item">
             <span class="mobile-nav-icon">🎵</span>
@@ -110,9 +99,6 @@
         </a>
     </nav>
 
-    <!-- =======================================================================
-         3. ARTIST DISCOGRAPHY PREVIEW MODAL
-         ======================================================================= -->
     <div id="artistModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
@@ -126,19 +112,11 @@
         </div>
     </div>
 
-    <!-- Non-blocking toast alerts container -->
     <div id="toastContainer"></div>
 
-    <!-- =======================================================================
-         4. JAVASCRIPT MODULE SCRIPTS
-         ======================================================================= -->
-    <!-- Storage & local database functions -->
     <script src="../js/storage.js"></script>
-    <!-- Spotify API communication -->
     <script src="../js/spotify-api.js"></script>
-    <!-- Shared UI components and theme runner -->
     <script src="../js/ui.js"></script>
-    <!-- Following screen controller -->
     <script src="../js/following.js"></script>
 
 </body>

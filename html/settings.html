@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy"
         content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: file:; connect-src *;">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,22 +13,17 @@
     <title>What New Songs - Settings</title>
     <link rel="icon" type="image/png" href="../icon.png">
     <link rel="apple-touch-icon" href="../icon.png">
-    <!-- Master Shared Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
 
-    <!-- =======================================================================
-         1. TOP NAVIGATION BAR (Shared across screens)
-         ======================================================================= -->
     <nav class="app-navbar">
         <a href="index.html" class="brand-section">
             <div class="brand-icon">🎵</div>
             <span class="brand-title">What New Songs</span>
         </a>
 
-        <!-- Screen Navigation Links (Desktop) -->
         <ul class="nav-links">
             <li>
                 <a href="index.html" class="nav-link">
@@ -59,12 +55,8 @@
         </div>
     </nav>
 
-    <!-- =======================================================================
-         2. MAIN SETTINGS SCREEN CONTENT
-         ======================================================================= -->
     <main class="main-content">
 
-        <!-- Screen Header -->
         <header class="page-header">
             <div>
                 <h1 class="page-title">App Preferences</h1>
@@ -72,10 +64,8 @@
             </div>
         </header>
 
-        <!-- Settings Card Panel -->
         <div class="settings-panel">
 
-            <!-- 1. View Mode Option -->
             <div class="setting-section">
                 <div class="setting-info">
                     <h4>Releases View Mode</h4>
@@ -89,7 +79,6 @@
                 </div>
             </div>
 
-            <!-- 2. Theme Mode Selection -->
             <div class="setting-section">
                 <div class="setting-info">
                     <h4>App Theme</h4>
@@ -104,7 +93,6 @@
                 </div>
             </div>
 
-            <!-- 3. Custom Background Color (Shown conditionally) -->
             <div id="customBgSection" class="setting-section" style="display: none;">
                 <div class="setting-info">
                     <h4>Custom Background Color</h4>
@@ -118,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- 4. Accent Color -->
             <div class="setting-section">
                 <div class="setting-info">
                     <h4>Button & Accent Color</h4>
@@ -132,7 +119,6 @@
                 </div>
             </div>
 
-            <!-- 5. Default Music Streaming Service -->
             <div class="setting-section">
                 <div class="setting-info">
                     <h4>Open Songs & Albums In</h4>
@@ -147,7 +133,6 @@
                 </div>
             </div>
 
-            <!-- 6. Spotify Web API Credentials -->
             <div class="setting-section" style="align-items: flex-start; flex-direction: column; gap: 14px;">
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
@@ -208,7 +193,6 @@
                 </div>
             </div>
 
-            <!-- 7. Spotify Diagnostics & Health Check -->
             <div class="setting-section" style="align-items: flex-start;">
                 <div class="setting-info">
                     <h4>Spotify API Diagnostics</h4>
@@ -225,31 +209,34 @@
                 </div>
             </div>
 
-            <!-- 8. Data Backup & Transfer (Export & Import) -->
             <div class="setting-section" style="align-items: flex-start; flex-direction: column; gap: 14px;">
                 <div class="setting-info" style="width: 100%;">
                     <h4>Data Backup & Transfer</h4>
-                    <p>Export your followed artists, favorites, and preferences to a single downloadable file, or import a backup file from another device.</p>
+                    <p>Export your followed artists, favorites, and preferences to a single downloadable file, or import
+                        a backup file from another device.</p>
                 </div>
 
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; width: 100%; align-items: center;">
-                    <button type="button" id="exportDataBtn" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <button type="button" id="exportDataBtn" class="btn btn-secondary btn-sm"
+                        style="display: inline-flex; align-items: center; gap: 6px;">
                         <span>📥</span> Export Data
                     </button>
-                    <button type="button" id="importDataBtn" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <button type="button" id="importDataBtn" class="btn btn-primary btn-sm"
+                        style="display: inline-flex; align-items: center; gap: 6px;">
                         <span>📤</span> Import Data
                     </button>
                     <input type="file" id="importFileInput" accept=".json,application/json" style="display: none;">
                 </div>
 
-                <div id="importStatusNotice" style="display: none; font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: var(--radius-md); width: 100%;"></div>
+                <div id="importStatusNotice"
+                    style="display: none; font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: var(--radius-md); width: 100%;">
+                </div>
             </div>
 
         </div>
 
     </main>
 
-    <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
         <a href="index.html" class="mobile-nav-item">
             <span class="mobile-nav-icon">🎵</span>
@@ -270,19 +257,11 @@
         </a>
     </nav>
 
-    <!-- Non-blocking toast alerts container -->
     <div id="toastContainer"></div>
 
-    <!-- =======================================================================
-         3. JAVASCRIPT MODULE SCRIPTS
-         ======================================================================= -->
-    <!-- Storage & local database functions -->
     <script src="../js/storage.js"></script>
-    <!-- Spotify API communication -->
     <script src="../js/spotify-api.js"></script>
-    <!-- Shared UI components and theme runner -->
     <script src="../js/ui.js"></script>
-    <!-- Settings screen controller -->
     <script src="../js/settings.js"></script>
 
 </body>

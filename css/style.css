@@ -1,15 +1,4 @@
-/* ==========================================================================
-   SPOTIFY RELEASE TRACKER - MASTER STYLESHEET
-   ==========================================================================
-   This stylesheet defines all theme variables, layout rules, navigation bars,
-   cards, buttons, modals, and toast animations across all screens in the app.
-   ========================================================================== */
-
-/* --------------------------------------------------------------------------
-   1. ROOT VARIABLES & THEME DEFAULTS
-   -------------------------------------------------------------------------- */
 :root {
-    /* Default Dark Mode Colors */
     --bg-main: #121212;
     --bg-surface: #181818;
     --bg-surface-hover: #222222;
@@ -17,23 +6,19 @@
     --border-color: rgba(255, 255, 255, 0.1);
     --border-subtle: rgba(255, 255, 255, 0.05);
 
-    /* Text Colors */
     --text-primary: #FFFFFF;
     --text-secondary: #B3B3B3;
     --text-muted: #7A7A7A;
 
-    /* Brand / Accent Colors (Can be updated dynamically in settings) */
     --primary-color: #4169E1;
     --primary-hover: #6787e7;
     --accent-glow: rgba(65, 105, 225, 0.25);
 
-    /* Utility Colors */
     --danger-color: #e22134;
     --warning-color: #f59e0b;
     --star-active: #f1c40f;
     --star-inactive: #555555;
 
-    /* Layout */
     --nav-height: 70px;
     --radius-sm: 6px;
     --radius-md: 10px;
@@ -44,7 +29,6 @@
     --transition-medium: 0.3s ease;
 }
 
-/* Light Mode Overrides */
 body.light-mode {
     --bg-main: #F4F5F7;
     --bg-surface: #FFFFFF;
@@ -58,9 +42,6 @@ body.light-mode {
     --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-/* --------------------------------------------------------------------------
-   2. GLOBAL RESET & BASE STYLES
-   -------------------------------------------------------------------------- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -79,9 +60,6 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* --------------------------------------------------------------------------
-   3. NAVIGATION BAR (Appears on every screen)
-   -------------------------------------------------------------------------- */
 .app-navbar {
     position: sticky;
     top: 0;
@@ -124,7 +102,6 @@ body {
     letter-spacing: -0.3px;
 }
 
-/* Nav links between the different HTML screens */
 .nav-links {
     display: flex;
     align-items: center;
@@ -150,7 +127,6 @@ body {
     background-color: var(--bg-surface-hover);
 }
 
-/* Highlight the link corresponding to the current screen */
 .nav-link.active {
     background-color: var(--primary-color);
     color: #FFFFFF !important;
@@ -164,16 +140,12 @@ body {
     font-size: 11px;
 }
 
-/* Navbar action buttons (Sync, etc.) */
 .nav-actions {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-/* --------------------------------------------------------------------------
-   4. MAIN CONTAINER & SCREEN LAYOUT
-   -------------------------------------------------------------------------- */
 .main-content {
     flex: 1;
     max-width: 1100px;
@@ -203,9 +175,6 @@ body {
     margin-top: 4px;
 }
 
-/* --------------------------------------------------------------------------
-   5. BUTTONS & INPUT ELEMENTS
-   -------------------------------------------------------------------------- */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -267,7 +236,6 @@ body {
     border-radius: var(--radius-full);
 }
 
-/* Inputs & Form Fields */
 .input-field {
     width: 100%;
     padding: 12px 18px;
@@ -291,9 +259,6 @@ body {
     margin-bottom: 24px;
 }
 
-/* --------------------------------------------------------------------------
-   6. TABS (Filter buttons on releases page)
-   -------------------------------------------------------------------------- */
 .filter-tabs {
     display: flex;
     gap: 8px;
@@ -327,9 +292,6 @@ body {
     box-shadow: 0 2px 10px var(--accent-glow);
 }
 
-/* --------------------------------------------------------------------------
-   7. RELEASE CARDS (For tracks, singles, and albums)
-   -------------------------------------------------------------------------- */
 .release-grid {
     display: flex;
     flex-direction: column;
@@ -399,7 +361,6 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Pulsing little red "NEW" bubble */
 .badge-new {
     display: inline-flex;
     align-items: center;
@@ -521,9 +482,6 @@ body {
     transform: scale(1.05);
 }
 
-/* --------------------------------------------------------------------------
-   8. ARTIST CARDS (For Search & Following screens)
-   -------------------------------------------------------------------------- */
 .artist-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -607,9 +565,6 @@ body {
     border-color: var(--danger-color);
 }
 
-/* --------------------------------------------------------------------------
-   9. ANNOUNCEMENT / NEW RELEASES BANNER
-   -------------------------------------------------------------------------- */
 .alert-banner {
     background: linear-gradient(135deg, var(--accent-glow), transparent);
     border: 1px solid var(--primary-color);
@@ -678,9 +633,6 @@ body {
     margin-top: 2px;
 }
 
-/* --------------------------------------------------------------------------
-   10. SETTINGS GROUPS & PREFERENCES
-   -------------------------------------------------------------------------- */
 .settings-panel {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -760,9 +712,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
     border-radius: var(--radius-full);
 }
 
-/* --------------------------------------------------------------------------
-   11. MODAL COMPONENT (Artist Discography Preview)
-   -------------------------------------------------------------------------- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -829,7 +778,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
     color: var(--text-primary);
 }
 
-/* Credentials Modal Box & Setup Guide */
 .credentials-modal-box {
     max-width: 520px;
 }
@@ -854,9 +802,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
 }
 
 
-/* --------------------------------------------------------------------------
-   12. TOAST NOTIFICATIONS (Non-blocking alerts)
-   -------------------------------------------------------------------------- */
 #toastContainer {
     position: fixed;
     bottom: 24px;
@@ -891,9 +836,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
     border-left: 4px solid var(--danger-color);
 }
 
-/* --------------------------------------------------------------------------
-   13. EMPTY STATES & LOADERS
-   -------------------------------------------------------------------------- */
 .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -932,7 +874,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
     animation: spin 0.8s linear infinite;
 }
 
-/* Keyframes */
 @keyframes spin {
     to {
         transform: rotate(360deg);
@@ -973,9 +914,6 @@ input[type="color"].color-picker::-webkit-color-swatch {
     }
 }
 
-/* --------------------------------------------------------------------------
-   14. MOBILE NAVIGATION BAR & RESPONSIVE LAYOUT
-   -------------------------------------------------------------------------- */
 .mobile-bottom-nav {
     display: none;
     position: fixed;
@@ -1182,8 +1120,19 @@ body.light-mode .mobile-bottom-nav {
 }
 
 @keyframes pulseGlow {
-    0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 6px var(--primary-color); }
-    50% { transform: scale(1.3); opacity: 0.85; box-shadow: 0 0 14px var(--primary-color); }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 6px var(--primary-color);
+    }
+
+    50% {
+        transform: scale(1.3);
+        opacity: 0.85;
+        box-shadow: 0 0 14px var(--primary-color);
+    }
 }
 
 .unseen-indicator {

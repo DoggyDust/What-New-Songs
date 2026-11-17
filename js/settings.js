@@ -54,38 +54,25 @@ function loadSpotifyCredentialsIntoSettings() {
     const hasCustom = Boolean(saved.clientId && saved.clientSecret);
     if (clearBtn) clearBtn.style.display = hasCustom ? 'inline-block' : 'none';
 
-    const authMethod = localStorage.getItem('spotify_auth_method') || (hasCustom ? 'custom' : 'none');
-    const lockout = typeof getPinLockoutStatus === 'function' ? getPinLockoutStatus() : { isLocked: false };
     const envLabel = (typeof isElectronApp === 'function' && isElectronApp()) ? 'Desktop App' : 'Web Mode';
 
     if (hasCustom) {
         if (statusBadge) {
-            statusBadge.textContent = authMethod === 'pin' ? `🟢 ${envLabel} (PIN Unlocked)` : `🟢 ${envLabel} (Custom Keys)`;
+            statusBadge.textContent = `🟢 Connected (${envLabel})`;
             statusBadge.style.backgroundColor = 'rgba(65, 105, 225, 0.2)';
             statusBadge.style.color = 'var(--primary-color)';
         }
         if (notice) {
-            notice.textContent = authMethod === 'pin'
-                ? 'Connected via access PIN. Credentials stored safely on your device.'
-                : 'Your custom Spotify Developer credentials are saved safely on this device.';
-        }
-    } else if (lockout.isLocked) {
-        if (statusBadge) {
-            statusBadge.textContent = `🚫 PIN Locked (${lockout.remainingDays} days left)`;
-            statusBadge.style.backgroundColor = 'rgba(226, 33, 52, 0.2)';
-            statusBadge.style.color = '#ff6b6b';
-        }
-        if (notice) {
-            notice.textContent = `Device locked out from PIN access for ${lockout.remainingDays} more day(s) due to 5 incorrect attempts. You must enter your own Spotify credentials below.`;
+            notice.textContent = 'Your Spotify Developer credentials are saved safely on this device.';
         }
     } else {
         if (statusBadge) {
-            statusBadge.textContent = '⚠️ Locked — Setup Required';
+            statusBadge.textContent = '⚠️ Setup Required';
             statusBadge.style.backgroundColor = 'rgba(226, 33, 52, 0.2)';
             statusBadge.style.color = '#ff6b6b';
         }
         if (notice) {
-            notice.textContent = 'Enter your access PIN or your own Spotify developer keys to unlock tracker features.';
+            notice.textContent = 'Enter your Spotify developer keys to unlock tracker features.';
         }
     }
 }
@@ -233,9 +220,38 @@ function bindSettingsEvents() {
             const id = clientIdInput ? clientIdInput.value.trim() : '';
             const secret = clientSecretInput ? clientSecretInput.value.trim() : '';
 
-            if (!id || !secret) {
-                showToast('Please fill in both Client ID and Client Secret.', 'error');
+            if (!id && !secret) {
+                showToast('Enter Client ID and Client Secret', 'error');
                 return;
+            }
+
+            if (!id && secret) {
+                showToast('Enter Client ID', 'error');
+                return;
+            }
+
+            if (id && !secret) {
+                saveCredBtn.disabled = true;
+                saveCredBtn.textContent = 'Verifying...';
+                try {
+                    const decrypted = await decryptCredentialsWithPin(id);
+                    if (decrypted && decrypted.clientId && decrypted.clientSecret) {
+                        saveSpotifyCredentials(decrypted.clientId, decrypted.clientSecret);
+                        localStorage.setItem('spotify_auth_method', 'pin');
+                        loadSpotifyCredentialsIntoSettings();
+                        showToast('Spotify credentials verified and saved!', 'success');
+                        saveCredBtn.disabled = false;
+                        saveCredBtn.textContent = 'Save Credentials';
+                        return;
+                    } else {
+                        throw new Error('Invalid credentials');
+                    }
+                } catch (err) {
+                    saveCredBtn.disabled = false;
+                    saveCredBtn.textContent = 'Save Credentials';
+                    showToast('Enter Client Secret', 'error');
+                    return;
+                }
             }
 
             saveCredBtn.disabled = true;
@@ -244,6 +260,7 @@ function bindSettingsEvents() {
             const test = await testSpotifyCredentials(id, secret);
             if (test.success) {
                 saveSpotifyCredentials(id, secret);
+                localStorage.setItem('spotify_auth_method', 'custom');
                 loadSpotifyCredentialsIntoSettings();
                 showToast('Spotify credentials verified and saved!', 'success');
             } else {

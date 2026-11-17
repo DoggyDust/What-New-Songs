@@ -18,7 +18,11 @@ async function decryptCredentialsWithPin(pin) {
         throw new Error('Please enter a valid PIN.');
     }
 
-    const cryptoObj = (typeof window !== 'undefined' && window.crypto) ? window.crypto : null;
+    const cryptoObj = (typeof globalThis !== 'undefined' && globalThis.crypto)
+        ? globalThis.crypto
+        : (typeof window !== 'undefined' && window.crypto)
+            ? window.crypto
+            : (typeof require !== 'undefined' ? require('crypto').webcrypto : null);
     if (!cryptoObj || !cryptoObj.subtle) {
         throw new Error('Web Cryptography API is not available on this browser.');
     }

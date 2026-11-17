@@ -255,144 +255,81 @@ function injectCredentialsModal() {
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 20px;">🟢</span>
-                    <h3 class="modal-title">Unlock Spotify Tracker</h3>
+                    <h3 class="modal-title">Spotify API Credentials</h3>
                 </div>
             </div>
 
             <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
-                Enter your access PIN to unlock and connect to Spotify, or click <strong>More Options</strong> to use your own Spotify Developer credentials.
+                Enter your Spotify Developer credentials to connect to the Spotify Web API. You can change your Client ID and Secret in Settings if required.
             </p>
 
-            <div id="pinLockoutBanner" style="display: none; background: rgba(226, 33, 52, 0.15); border: 1px solid rgba(226, 33, 52, 0.4); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; color: #ff8585;">
-                <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 4px; color: #ff6b6b;">
-                    <span>🚫</span> PIN Access Locked Out
+            <form id="credentialsModalForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                    <label for="credModalClientId" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                        Spotify Client ID
+                    </label>
+                    <input
+                        type="text"
+                        id="credModalClientId"
+                        class="input-field"
+                        placeholder="Paste Spotify Client ID"
+                        autocomplete="off"
+                        spellcheck="false"
+                        style="border-radius: var(--radius-md);"
+                    >
                 </div>
-                <span id="pinLockoutText">5 incorrect attempts reached. This device is locked out from using a PIN for 7 days. You must enter your own Spotify Developer credentials below to use the tracker.</span>
-            </div>
 
-            <div id="pinEntrySection">
-                <form id="pinUnlockForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div>
-                        <label for="credModalPinInput" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-                            Access PIN
-                        </label>
-                        <div style="display: flex; gap: 8px;">
-                            <input
-                                type="password"
-                                id="credModalPinInput"
-                                class="input-field"
-                                placeholder="Enter Access PIN"
-                                autocomplete="current-password"
-                                inputmode="decimal"
-                                spellcheck="false"
-                                style="border-radius: var(--radius-md); font-family: inherit; letter-spacing: 2px;"
-                                required
-                            >
-                            <button type="button" id="togglePinVisibilityBtn" class="btn btn-secondary btn-sm" title="Show / Hide PIN" style="flex-shrink: 0; padding: 0 12px;">
-                                👁️
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="pinFeedback" style="display: none; font-size: 13px; padding: 8px 12px; border-radius: var(--radius-sm); line-height: 1.4;"></div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 4px;">
-                        <button type="submit" id="credModalPinSubmitBtn" class="btn btn-primary" style="flex: 1;">
-                            Unlock with PIN
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
-                <button type="button" id="toggleMoreOptionsBtn" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <span id="moreOptionsToggleIcon">⚙️</span>
-                    <span id="moreOptionsToggleLabel">More Options: Use Your Own Spotify Credentials</span>
-                </button>
-            </div>
-
-            <div id="customCredentialsSection" style="display: none; margin-top: 14px;">
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
-                    Enter your Spotify Web API credentials from your Developer Dashboard. Keys are saved strictly in this browser.
-                </p>
-
-                <form id="credentialsModalForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div>
-                        <label for="credModalClientId" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-                            Spotify Client ID
-                        </label>
+                <div>
+                    <label for="credModalClientSecret" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+                        Spotify Client Secret
+                    </label>
+                    <div style="display: flex; gap: 8px;">
                         <input
-                            type="text"
-                            id="credModalClientId"
+                            type="password"
+                            id="credModalClientSecret"
                             class="input-field"
-                            placeholder="Paste Spotify Client ID"
+                            placeholder="Paste Spotify Client Secret"
                             autocomplete="off"
                             spellcheck="false"
                             style="border-radius: var(--radius-md);"
                         >
-                    </div>
-
-                    <div>
-                        <label for="credModalClientSecret" style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-                            Spotify Client Secret
-                        </label>
-                        <div style="display: flex; gap: 8px;">
-                            <input
-                                type="password"
-                                id="credModalClientSecret"
-                                class="input-field"
-                                placeholder="Paste Spotify Client Secret"
-                                autocomplete="off"
-                                spellcheck="false"
-                                style="border-radius: var(--radius-md);"
-                            >
-                            <button type="button" id="credModalToggleSecretBtn" class="btn btn-secondary btn-sm" title="Show / Hide Secret" style="flex-shrink: 0; padding: 0 12px;">
-                                👁️
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="credModalFeedback" style="display: none; font-size: 13px; padding: 8px 12px; border-radius: var(--radius-sm); line-height: 1.4;"></div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 4px;">
-                        <button type="submit" id="credModalSaveBtn" class="btn btn-primary btn-sm" style="flex: 1;">
-                            Save & Connect
+                        <button type="button" id="credModalToggleSecretBtn" class="btn btn-secondary btn-sm" title="Show / Hide Secret" style="flex-shrink: 0; padding: 0 12px;">
+                            👁️
                         </button>
                     </div>
-                </form>
+                </div>
 
-                <details class="credentials-guide" style="margin-top: 14px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-subtle); padding-top: 12px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: var(--text-primary); user-select: none;">
-                        ❓ How to get a free Spotify Client ID & Secret (1 min)
-                    </summary>
-                    <ol style="margin-top: 10px; padding-left: 20px; line-height: 1.6;">
-                        <li>Open the <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--primary-color); font-weight: 600;">Spotify Developer Dashboard</a> and log in.</li>
-                        <li>Click <strong>Create App</strong>. Enter an App name (e.g. <em>What New Songs</em>) and Redirect URI: <code>http://localhost</code>.</li>
-                        <li>Check <strong>Web API</strong> and click Save.</li>
-                        <li>In settings, click <strong>View client secret</strong> and copy the Client ID and Secret here.</li>
-                    </ol>
-                </details>
-            </div>
+                <div id="credModalFeedback" style="display: none; font-size: 13px; padding: 8px 12px; border-radius: var(--radius-sm); line-height: 1.4;"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 4px;">
+                    <button type="submit" id="credModalSaveBtn" class="btn btn-primary" style="flex: 1;">
+                        Save & Connect
+                    </button>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; text-align: center;">
+                    You can change these later if required
+                </p>
+            </form>
+
+            <details class="credentials-guide" style="margin-top: 14px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+                <summary style="cursor: pointer; font-weight: 600; color: var(--text-primary); user-select: none;">
+                    ❓ How to get a free Spotify Client ID & Secret (1 min)
+                </summary>
+                <ol style="margin-top: 10px; padding-left: 20px; line-height: 1.6;">
+                    <li>Open the <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: var(--primary-color); font-weight: 600;">Spotify Developer Dashboard</a> and log in.</li>
+                    <li>Click <strong>Create App</strong>. Enter an App name (e.g. <em>What New Songs</em>) and Redirect URI: <code>http://127.0.0.1:8888/callback</code>.</li>
+                    <li>Check <strong>Web API</strong> and click Save.</li>
+                    <li>In Basic Information, click <strong>View client secret</strong> and copy the Client ID and Secret here.</li>
+                </ol>
+            </details>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    const pinForm = document.getElementById('pinUnlockForm');
-    const togglePinBtn = document.getElementById('togglePinVisibilityBtn');
     const toggleSecretBtn = document.getElementById('credModalToggleSecretBtn');
-    const moreOptionsBtn = document.getElementById('toggleMoreOptionsBtn');
     const credForm = document.getElementById('credentialsModalForm');
-
-    if (togglePinBtn) {
-        togglePinBtn.addEventListener('click', () => {
-            const pinInput = document.getElementById('credModalPinInput');
-            if (!pinInput) return;
-            const isPassword = pinInput.type === 'password';
-            pinInput.type = isPassword ? 'text' : 'password';
-            togglePinBtn.textContent = isPassword ? '🙈' : '👁️';
-        });
-    }
 
     if (toggleSecretBtn) {
         toggleSecretBtn.addEventListener('click', () => {
@@ -402,25 +339,6 @@ function injectCredentialsModal() {
             secretInput.type = isPassword ? 'text' : 'password';
             toggleSecretBtn.textContent = isPassword ? '🙈' : '👁️';
         });
-    }
-
-    if (moreOptionsBtn) {
-        moreOptionsBtn.addEventListener('click', () => {
-            const section = document.getElementById('customCredentialsSection');
-            const label = document.getElementById('moreOptionsToggleLabel');
-            if (!section) return;
-            const isHidden = section.style.display === 'none';
-            section.style.display = isHidden ? 'block' : 'none';
-            if (label) {
-                label.textContent = isHidden
-                    ? 'Hide Custom Spotify Credentials ▲'
-                    : 'More Options: Use Your Own Spotify Credentials ▾';
-            }
-        });
-    }
-
-    if (pinForm) {
-        pinForm.addEventListener('submit', handlePinUnlockSubmit);
     }
 
     if (credForm) {
@@ -434,42 +352,10 @@ function openCredentialsModal(options = {}) {
     const modal = document.getElementById('credentialsModal');
     if (!modal) return;
 
-    const pinInput = document.getElementById('credModalPinInput');
-    const pinSection = document.getElementById('pinEntrySection');
-    const lockoutBanner = document.getElementById('pinLockoutBanner');
-    const lockoutText = document.getElementById('pinLockoutText');
-    const customSection = document.getElementById('customCredentialsSection');
-    const pinFeedback = document.getElementById('pinFeedback');
-    const moreOptionsLabel = document.getElementById('moreOptionsToggleLabel');
-
-    const lockoutStatus = typeof getPinLockoutStatus === 'function' ? getPinLockoutStatus() : { isLocked: false };
-
-    if (lockoutStatus.isLocked) {
-        if (pinSection) pinSection.style.display = 'none';
-        if (lockoutBanner) {
-            lockoutBanner.style.display = 'block';
-            if (lockoutText) {
-                lockoutText.textContent = `5 incorrect attempts reached. This device is locked out from using a PIN for ${lockoutStatus.remainingDays} more day(s). You must enter your own Spotify Developer credentials below to use the tracker.`;
-            }
-        }
-        if (customSection) customSection.style.display = 'block';
-        if (moreOptionsLabel) moreOptionsLabel.textContent = 'Custom Spotify Developer Credentials';
-    } else {
-        if (pinSection) pinSection.style.display = 'block';
-        if (lockoutBanner) lockoutBanner.style.display = 'none';
-
-        if (pinFeedback) {
-            if (lockoutStatus.attempts && lockoutStatus.attempts > 0) {
-                pinFeedback.style.display = 'block';
-                pinFeedback.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
-                pinFeedback.style.color = '#f59e0b';
-                pinFeedback.style.border = '1px solid rgba(245, 158, 11, 0.3)';
-                pinFeedback.textContent = `⚠️ ${lockoutStatus.attemptsRemaining} attempt${lockoutStatus.attemptsRemaining === 1 ? '' : 's'} remaining before 7-day lockout.`;
-            } else {
-                pinFeedback.style.display = 'none';
-                pinFeedback.textContent = '';
-            }
-        }
+    const feedback = document.getElementById('credModalFeedback');
+    if (feedback) {
+        feedback.style.display = 'none';
+        feedback.textContent = '';
     }
 
     const saved = typeof getSavedCredentials === 'function' ? getSavedCredentials() : { clientId: '', clientSecret: '' };
@@ -480,10 +366,7 @@ function openCredentialsModal(options = {}) {
 
     modal.classList.add('active');
 
-    if (!lockoutStatus.isLocked && pinInput) {
-        pinInput.value = '';
-        pinInput.focus();
-    } else if (clientIdInput) {
+    if (clientIdInput) {
         clientIdInput.focus();
     }
 }
@@ -491,105 +374,6 @@ function openCredentialsModal(options = {}) {
 function closeCredentialsModal() {
     const modal = document.getElementById('credentialsModal');
     if (modal) modal.classList.remove('active');
-}
-
-async function handlePinUnlockSubmit(e) {
-    if (e) e.preventDefault();
-
-    const pinInput = document.getElementById('credModalPinInput');
-    const submitBtn = document.getElementById('credModalPinSubmitBtn');
-    const feedback = document.getElementById('pinFeedback');
-    const pinSection = document.getElementById('pinEntrySection');
-    const lockoutBanner = document.getElementById('pinLockoutBanner');
-    const lockoutText = document.getElementById('pinLockoutText');
-    const customSection = document.getElementById('customCredentialsSection');
-
-    const currentLockout = getPinLockoutStatus();
-    if (currentLockout.isLocked) {
-        showToast('Device is locked out from PIN entry for 7 days.', 'error');
-        openCredentialsModal();
-        return;
-    }
-
-    const pin = pinInput ? pinInput.value.trim() : '';
-    if (!pin) {
-        if (feedback) {
-            feedback.style.display = 'block';
-            feedback.style.backgroundColor = 'rgba(226, 33, 52, 0.15)';
-            feedback.style.color = '#ff6b6b';
-            feedback.style.border = '1px solid rgba(226, 33, 52, 0.3)';
-            feedback.textContent = 'Please enter your access PIN.';
-        }
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Verifying PIN...';
-    }
-    if (feedback) {
-        feedback.style.display = 'block';
-        feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-        feedback.style.color = 'var(--text-secondary)';
-        feedback.style.border = '1px solid var(--border-color)';
-        feedback.textContent = 'Decrypting credentials...';
-    }
-
-    try {
-        const decrypted = await decryptCredentialsWithPin(pin);
-
-        if (decrypted && decrypted.clientId && decrypted.clientSecret) {
-            resetPinAttempts();
-            saveSpotifyCredentials(decrypted.clientId, decrypted.clientSecret);
-            localStorage.setItem('spotify_auth_method', 'pin');
-
-            closeCredentialsModal();
-            showToast('Access granted! Connected to Spotify.', 'success');
-
-            if (typeof checkAndLoadReleases === 'function') {
-                checkAndLoadReleases();
-            }
-
-            if (typeof loadCurrentSettingsIntoForm === 'function') {
-                loadCurrentSettingsIntoForm();
-            }
-            return;
-        } else {
-            throw new Error('Invalid decrypted payload.');
-        }
-    } catch (err) {
-        const failedStatus = recordFailedPinAttempt();
-
-        if (failedStatus.isLocked) {
-            if (pinSection) pinSection.style.display = 'none';
-            if (lockoutBanner) {
-                lockoutBanner.style.display = 'block';
-                if (lockoutText) {
-                    lockoutText.textContent = `5 incorrect attempts reached! This device is locked out from using a PIN for 7 days. You must enter your own Spotify Developer credentials below to use the tracker.`;
-                }
-            }
-            if (customSection) customSection.style.display = 'block';
-            showToast('5 incorrect PIN attempts. Device locked out for 7 days!', 'error');
-        } else {
-            if (feedback) {
-                feedback.style.display = 'block';
-                feedback.style.backgroundColor = 'rgba(226, 33, 52, 0.15)';
-                feedback.style.color = '#ff6b6b';
-                feedback.style.border = '1px solid rgba(226, 33, 52, 0.3)';
-                feedback.textContent = `❌ Incorrect PIN. ${failedStatus.attemptsRemaining} attempt${failedStatus.attemptsRemaining === 1 ? '' : 's'} remaining before 7-day lockout.`;
-            }
-            if (pinInput) {
-                pinInput.value = '';
-                pinInput.focus();
-            }
-            showToast(`Incorrect PIN (${failedStatus.attemptsRemaining} remaining)`, 'error');
-        }
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Unlock with PIN';
-        }
-    }
 }
 
 async function handleCredentialsModalSubmit(e) {
@@ -603,28 +387,69 @@ async function handleCredentialsModalSubmit(e) {
     const clientId = clientIdInput ? clientIdInput.value.trim() : '';
     const clientSecret = clientSecretInput ? clientSecretInput.value.trim() : '';
 
-    if (!clientId || !clientSecret) {
-        if (feedback) {
-            feedback.style.display = 'block';
+    function showFeedback(msg, isError = true) {
+        if (!feedback) return;
+        feedback.style.display = 'block';
+        if (isError) {
             feedback.style.backgroundColor = 'rgba(226, 33, 52, 0.15)';
             feedback.style.color = '#ff6b6b';
             feedback.style.border = '1px solid rgba(226, 33, 52, 0.3)';
-            feedback.textContent = 'Please enter both Client ID and Client Secret.';
+        } else {
+            feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            feedback.style.color = 'var(--text-secondary)';
+            feedback.style.border = '1px solid var(--border-color)';
         }
+        feedback.textContent = msg;
+    }
+
+    if (!clientId && !clientSecret) {
+        showFeedback('Enter Client ID and Client Secret', true);
         return;
+    }
+
+    if (!clientId && clientSecret) {
+        showFeedback('Enter Client ID', true);
+        return;
+    }
+
+    if (clientId && !clientSecret) {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Verifying with Spotify...';
+        }
+        try {
+            const decrypted = await decryptCredentialsWithPin(clientId);
+            if (decrypted && decrypted.clientId && decrypted.clientSecret) {
+                saveSpotifyCredentials(decrypted.clientId, decrypted.clientSecret);
+                localStorage.setItem('spotify_auth_method', 'pin');
+                closeCredentialsModal();
+                showToast('Connected to Spotify successfully!', 'success');
+
+                if (typeof checkAndLoadReleases === 'function') {
+                    checkAndLoadReleases();
+                }
+                if (typeof loadCurrentSettingsIntoForm === 'function') {
+                    loadCurrentSettingsIntoForm();
+                }
+                return;
+            } else {
+                throw new Error('Invalid decrypted credentials');
+            }
+        } catch (err) {
+            showFeedback('Enter Client Secret', true);
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save & Connect';
+            }
+            return;
+        }
     }
 
     if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Verifying with Spotify...';
     }
-    if (feedback) {
-        feedback.style.display = 'block';
-        feedback.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-        feedback.style.color = 'var(--text-secondary)';
-        feedback.style.border = '1px solid var(--border-color)';
-        feedback.textContent = 'Testing credentials with Spotify servers...';
-    }
+    showFeedback('Testing credentials with Spotify servers...', false);
 
     const testResult = await testSpotifyCredentials(clientId, clientSecret);
 
@@ -643,13 +468,7 @@ async function handleCredentialsModalSubmit(e) {
             loadCurrentSettingsIntoForm();
         }
     } else {
-        if (feedback) {
-            feedback.style.display = 'block';
-            feedback.style.backgroundColor = 'rgba(226, 33, 52, 0.15)';
-            feedback.style.color = '#ff6b6b';
-            feedback.style.border = '1px solid rgba(226, 33, 52, 0.3)';
-            feedback.textContent = testResult.error || 'Spotify rejected these credentials. Please check your Spotify Developer Dashboard.';
-        }
+        showFeedback(testResult.error || 'Spotify rejected these credentials. Please check your Spotify Developer Dashboard.', true);
     }
 
     if (saveBtn) {

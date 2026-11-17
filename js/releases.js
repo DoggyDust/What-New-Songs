@@ -81,7 +81,6 @@ async function checkAndLoadReleases(forceRefresh = false) {
         return;
     }
 
-    // Try rendering immediately from cached releases first for fast UI responsiveness
     const cachedStr = sessionStorage.getItem('cachedReleases');
     if (cachedStr && !forceRefresh) {
         try {
@@ -266,7 +265,7 @@ function renderReleaseCards(releases, container) {
             if (seen.length > 0) {
                 const divider = document.createElement('div');
                 divider.className = 'releases-divider';
-                divider.innerHTML = '<span class="releases-divider-label">Past 7 Days </span>';
+                divider.innerHTML = '<span class="releases-divider-label">Past 7 Days</span>';
                 container.appendChild(divider);
             }
         }

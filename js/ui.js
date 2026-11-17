@@ -18,7 +18,61 @@ document.addEventListener('DOMContentLoaded', () => {
             openCredentialsModal({ isInitialPrompt: true });
         }, 350);
     }
+
+    initAutoUpdateChecker();
 });
+
+function initAutoUpdateChecker() {
+    if (typeof window === 'undefined' || !window.fetch) return;
+    if (typeof isElectronApp === 'function' && isElectronApp()) return;
+
+    let initialVersion = null;
+
+    async function checkForUpdates() {
+        try {
+            const pathPrefix = window.location.pathname.includes('/html/') ? '../' : './';
+            const versionUrl = `${pathPrefix}version.json?_t=${Date.now()}`;
+            const res = await fetch(versionUrl, {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const serverVersion = String(data.version || data.updatedAt || '');
+            if (!serverVersion) return;
+
+            if (initialVersion === null) {
+                initialVersion = serverVersion;
+                sessionStorage.setItem('app_active_version', serverVersion);
+                return;
+            }
+
+            if (serverVersion !== initialVersion) {
+                initialVersion = serverVersion;
+                sessionStorage.setItem('app_active_version', serverVersion);
+                showToast('Website updated! Refreshing...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } catch (e) {
+        }
+    }
+
+    const savedVer = sessionStorage.getItem('app_active_version');
+    if (savedVer) {
+        initialVersion = savedVer;
+    }
+
+    checkForUpdates();
+    setInterval(checkForUpdates, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            checkForUpdates();
+        }
+    });
+    window.addEventListener('focus', checkForUpdates);
+}
 
 function applyThemeFromSettings() {
     const db = getDatabase();

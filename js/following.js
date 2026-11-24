@@ -59,11 +59,6 @@ function renderArtistGrid(artists, container) {
     }
 
     const sorted = [...artists].sort((a, b) => {
-        const aPinned = isArtistPinned(a.id);
-        const bPinned = isArtistPinned(b.id);
-        if (aPinned && !bPinned) return -1;
-        if (!aPinned && bPinned) return 1;
-
         const aFav = isArtistFavorited(a.id);
         const bFav = isArtistFavorited(b.id);
         if (aFav && !bFav) return -1;
@@ -74,22 +69,17 @@ function renderArtistGrid(artists, container) {
 
     sorted.forEach(artist => {
         const avatarUrl = artist.image || 'icon.png';
-        const pinned = isArtistPinned(artist.id);
         const favorited = isArtistFavorited(artist.id);
 
         const card = document.createElement('div');
         card.className = 'artist-card';
 
         card.innerHTML = `
-            ${pinned ? '<div class="pinned-badge">📌 Pinned</div>' : ''}
             ${favorited ? '<div class="fav-artist-badge">★</div>' : ''}
             <img src="${avatarUrl}" alt="${artist.name}" class="artist-avatar" loading="lazy">
             <div class="artist-name" title="${artist.name}">${escapeHtml(artist.name)}</div>
             <div class="artist-genre">Click to view releases</div>
             <div class="artist-card-actions">
-                <button class="artist-action-btn pin-btn ${pinned ? 'is-pinned' : ''}" title="${pinned ? 'Unpin from top' : 'Pin to top'}">
-                    📌
-                </button>
                 <button class="artist-action-btn fav-artist-btn ${favorited ? 'is-favorite' : ''}" title="${favorited ? 'Remove priority' : 'Favorite (priority releases)'}">
                     ${favorited ? '★' : '☆'}
                 </button>
@@ -102,14 +92,6 @@ function renderArtistGrid(artists, container) {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.artist-card-actions')) return;
             openArtistDiscographyModal(artist.id, artist.name);
-        });
-
-        const pinBtn = card.querySelector('.pin-btn');
-        pinBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const nowPinned = togglePinArtist(artist.id);
-            showToast(nowPinned ? `Pinned ${artist.name} to top` : `Unpinned ${artist.name}`);
-            filterAndRenderArtists();
         });
 
         const favBtn = card.querySelector('.fav-artist-btn');

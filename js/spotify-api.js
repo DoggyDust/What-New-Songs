@@ -285,10 +285,8 @@ async function getArtistById(artistId) {
     }
 }
 
-let directAlbumsBlockedUntil = 0;
-
 async function fetchArtistReleases(artistId, limit = 50, artistName = '') {
-    const token = await getSpotifyToken();
+    let token = await getSpotifyToken();
     if (!token) return [];
 
     if (!artistName && typeof getDatabase === 'function') {
@@ -297,76 +295,65 @@ async function fetchArtistReleases(artistId, limit = 50, artistName = '') {
         if (found) artistName = found.name;
     }
 
-    const now = Date.now();
-
-    if (now >= directAlbumsBlockedUntil) {
+    if (artistId) {
         try {
-            const url = `${SPOTIFY_API_BASE}/artists/${artistId}/albums?include_groups=single,album,appears_on&limit=${Math.min(limit, 50)}`;
-            const response = await fetch(url, {
+            const url = `${SPOTIFY_API_BASE}/artists/${artistId}/albums?include_groups=single,album&limit=${Math.min(limit, 50)}`;
+            let response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (response.status === 401) {
+                resetSpotifyTokenCache();
+                token = await getSpotifyToken();
+                if (token) {
+                    response = await fetch(url, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                }
+            }
 
             if (response.ok) {
                 const data = await response.json();
                 if (data.items && data.items.length > 0) {
                     return data.items;
                 }
-            } else if (response.status === 429) {
-                const retrySec = parseInt(response.headers.get('retry-after') || '300', 10);
-                directAlbumsBlockedUntil = Date.now() + (Math.max(retrySec, 60) * 1000);
-                console.warn(`// Spotify direct endpoint rate-limited (429). Using search fallback.`);
-            } else if (response.status === 401) {
-                resetSpotifyTokenCache();
             }
         } catch (error) {
-            console.warn(`// Spotify API direct fetch error for ${artistId}:`, error);
         }
     }
 
     if (artistName) {
         try {
             const cleanName = artistName.replace(/["\\]/g, '').trim();
-            const searchUrl = `${SPOTIFY_API_BASE}/search?q=${encodeURIComponent('artist:"' + cleanName + '"')}&type=album&limit=10`;
-            const searchRes = await fetch(searchUrl, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const searchQueries = [
+                `artist:"${cleanName}"`,
+                `artist:${cleanName}`,
+                cleanName
+            ];
 
-            if (searchRes.ok) {
-                const searchData = await searchRes.json();
-                const items = (searchData.albums && searchData.albums.items) ? searchData.albums.items : [];
-                const matching = items.filter(it => it.artists && it.artists.some(a =>
-                    (artistId && a.id === artistId) ||
-                    (a.name.toLowerCase() === cleanName.toLowerCase())
-                ));
+            for (const sq of searchQueries) {
+                const searchUrl = `${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(sq)}&type=album&limit=20`;
+                const searchRes = await fetch(searchUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-                if (items.length === 10 && limit > 10) {
-                    try {
-                        const page2Url = `${SPOTIFY_API_BASE}/search?q=${encodeURIComponent('artist:"' + cleanName + '"')}&type=album&limit=10&offset=10`;
-                        const page2Res = await fetch(page2Url, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        if (page2Res.ok) {
-                            const page2Data = await page2Res.json();
-                            const page2Items = (page2Data.albums && page2Data.albums.items) ? page2Data.albums.items : [];
-                            page2Items.forEach(it => {
-                                if (it.artists && it.artists.some(a => (artistId && a.id === artistId) || a.name.toLowerCase() === cleanName.toLowerCase())) {
-                                    if (!matching.some(m => m.id === it.id)) {
-                                        matching.push(it);
-                                    }
-                                }
-                            });
-                        }
-                    } catch (_) { }
+                if (searchRes.ok) {
+                    const searchData = await searchRes.json();
+                    const items = (searchData.albums && searchData.albums.items) ? searchData.albums.items : [];
+                    const matching = items.filter(it => it.artists && it.artists.some(a =>
+                        (artistId && a.id === artistId) ||
+                        (a.name.toLowerCase() === cleanName.toLowerCase())
+                    ));
+
+                    if (matching.length > 0) {
+                        return matching;
+                    }
+                } else if (searchRes.status === 401) {
+                    resetSpotifyTokenCache();
+                    break;
                 }
-
-                if (matching.length > 0) {
-                    return matching;
-                }
-            } else if (searchRes.status === 401) {
-                resetSpotifyTokenCache();
             }
         } catch (searchErr) {
-            console.error(`// Spotify search fallback error for ${artistName}:`, searchErr);
         }
     }
 

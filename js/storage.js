@@ -177,9 +177,6 @@ function isReleaseFavorited(release) {
     if (db.favorites && db.favorites.includes(releaseId)) {
         return true;
     }
-    if (typeof release === 'object' && release !== null && Array.isArray(release.artists)) {
-        return release.artists.some(artist => isArtistFavorited(artist.id));
-    }
     return false;
 }
 
@@ -586,4 +583,21 @@ function validateAndImportDatabase(rawContent) {
     }
 
     return { success: true, message: 'Success importing data' };
+}
+
+function mergeReleases(existingReleases, newReleases) {
+    const map = new Map();
+    if (Array.isArray(existingReleases)) {
+        existingReleases.forEach(r => {
+            if (r && r.id) map.set(r.id, r);
+        });
+    }
+    if (Array.isArray(newReleases)) {
+        newReleases.forEach(r => {
+            if (r && r.id) map.set(r.id, r);
+        });
+    }
+    const combined = Array.from(map.values());
+    combined.sort((a, b) => new Date(b.release_date || 0) - new Date(a.release_date || 0));
+    return combined;
 }

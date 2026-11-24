@@ -35,6 +35,7 @@ function loadCurrentSettingsIntoForm() {
     }
 
     loadSpotifyCredentialsIntoSettings();
+    renderNotificationHistory();
 }
 
 function loadSpotifyCredentialsIntoSettings() {
@@ -349,6 +350,24 @@ function bindSettingsEvents() {
             reader.readAsText(file);
         });
     }
+
+    const moreBtn = document.getElementById('notificationHistoryMoreBtn');
+    if (moreBtn) {
+        moreBtn.addEventListener('click', () => {
+            isNotificationHistoryExpanded = true;
+            renderNotificationHistory();
+        });
+    }
+
+    const clearHistoryBtn = document.getElementById('clearNotificationHistoryBtn');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', () => {
+            localStorage.removeItem('system_notification_history');
+            isNotificationHistoryExpanded = false;
+            renderNotificationHistory();
+            showToast('Notification history cleared.', 'info');
+        });
+    }
 }
 
 async function testSpotifyConnection() {
@@ -400,4 +419,76 @@ async function testSpotifyConnection() {
     } finally {
         if (testBtn) testBtn.disabled = false;
     }
+}
+
+let isNotificationHistoryExpanded = false;
+
+function renderNotificationHistory() {
+    const listEl = document.getElementById('notificationHistoryList');
+    const moreContainer = document.getElementById('notificationHistoryMoreContainer');
+    if (!listEl) return;
+
+    let history = [];
+    try {
+        const str = localStorage.getItem('system_notification_history');
+        if (str) history = JSON.parse(str);
+    } catch (_) {}
+
+    if (!Array.isArray(history) || history.length === 0) {
+        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; padding: 6px 0;">No notification history yet.</div>';
+        if (moreContainer) moreContainer.style.display = 'none';
+        listEl.classList.remove('is-expanded');
+        return;
+    }
+
+    listEl.innerHTML = '';
+
+    const displayed = isNotificationHistoryExpanded ? history : history.slice(0, 3);
+
+    if (isNotificationHistoryExpanded) {
+        listEl.classList.add('is-expanded');
+        if (moreContainer) moreContainer.style.display = 'none';
+    } else {
+        listEl.classList.remove('is-expanded');
+        if (moreContainer) {
+            moreContainer.style.display = history.length > 3 ? 'block' : 'none';
+        }
+    }
+
+    displayed.forEach(item => {
+        const row = document.createElement('div');
+        row.className = `notification-history-item item-${item.type || 'info'}`;
+
+        const icon = item.type === 'success' ? '✅' : (item.type === 'error' ? '❌' : 'ℹ️');
+
+        let timeStr = '';
+        if (item.timestamp) {
+            const d = new Date(item.timestamp);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const mins = String(d.getMinutes()).padStart(2, '0');
+            timeStr = `${day}/${month} ${hours}:${mins}`;
+        }
+
+        row.innerHTML = `
+            <div class="notification-history-msg">
+                <span>${icon}</span>
+                <span>${escapeHtml(item.message || '')}</span>
+            </div>
+            <div class="notification-history-time">${timeStr}</div>
+        `;
+
+        listEl.appendChild(row);
+    });
+}
+
+function escapeHtml(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

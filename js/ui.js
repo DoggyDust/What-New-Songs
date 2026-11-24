@@ -182,7 +182,25 @@ function updateNavFollowingBadge() {
     });
 }
 
+function recordNotificationHistory(message, type = 'info') {
+    try {
+        const historyStr = localStorage.getItem('system_notification_history');
+        let history = historyStr ? JSON.parse(historyStr) : [];
+        if (!Array.isArray(history)) history = [];
+        history.unshift({
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+            message,
+            type,
+            timestamp: Date.now()
+        });
+        if (history.length > 100) history = history.slice(0, 100);
+        localStorage.setItem('system_notification_history', JSON.stringify(history));
+    } catch (_) {}
+}
+
 function showToast(message, type = 'success') {
+    recordNotificationHistory(message, type);
+
     let container = document.getElementById('toastContainer');
     if (!container) {
         container = document.createElement('div');
@@ -193,7 +211,7 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
 
-    const icon = type === 'success' ? '✅' : '⚠️';
+    const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
     toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
 
     container.appendChild(toast);
@@ -217,7 +235,7 @@ async function handleGlobalSync() {
         return;
     }
 
-    showToast('Checking Spotify for new releases...', 'success');
+    showToast('Checking Spotify for new releases...', 'info');
 
     try {
         const db = getDatabase();
@@ -229,14 +247,26 @@ async function handleGlobalSync() {
 
         const releases = await fetchAllFollowedReleases(db.artists);
 
-        localStorage.setItem('cachedReleases', JSON.stringify(releases));
-
-        if (typeof detectBrandNewReleases === 'function') {
-            detectBrandNewReleases(releases);
+        if (!releases || releases.length === 0) {
+            showToast('New releases search failed', 'error');
+            if (syncIcon) syncIcon.classList.remove('spinning');
+            return;
         }
 
+        let existing = [];
+        try {
+            const stored = localStorage.getItem('cachedReleases');
+            if (stored) existing = JSON.parse(stored);
+        } catch (_) {}
+
+        const merged = (typeof mergeReleases === 'function')
+            ? mergeReleases(existing, releases)
+            : releases;
+
+        localStorage.setItem('cachedReleases', JSON.stringify(merged));
+
         if (typeof renderAllReleasesFromCache === 'function') {
-            renderAllReleasesFromCache(releases);
+            renderAllReleasesFromCache(merged);
         }
 
         const seenIds = new Set(db.seenReleaseIds || []);
@@ -254,7 +284,7 @@ async function handleGlobalSync() {
             showToast('All caught up! No new releases found.', 'success');
         }
     } catch (error) {
-        showToast('Failed to sync with Spotify.', 'error');
+        showToast('New releases search failed', 'error');
     } finally {
         if (syncIcon) syncIcon.classList.remove('spinning');
     }

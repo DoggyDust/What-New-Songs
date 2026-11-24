@@ -100,7 +100,16 @@ async function checkAndLoadReleases(forceRefresh = false) {
     }
 
     try {
-        allLoadedReleases = await fetchAllFollowedReleases(db.artists);
+        const freshReleases = await fetchAllFollowedReleases(db.artists);
+
+        if (!freshReleases || freshReleases.length === 0) {
+            showToast('New releases search failed', 'error');
+            return;
+        }
+
+        allLoadedReleases = (typeof mergeReleases === 'function')
+            ? mergeReleases(allLoadedReleases, freshReleases)
+            : freshReleases;
 
         localStorage.setItem('cachedReleases', JSON.stringify(allLoadedReleases));
 
@@ -108,6 +117,7 @@ async function checkAndLoadReleases(forceRefresh = false) {
 
         filterAndRenderCurrentTab();
     } catch (error) {
+        showToast('New releases search failed', 'error');
         if (!allLoadedReleases || allLoadedReleases.length === 0) {
             listContainer.innerHTML = `
                 <div class="empty-state">
@@ -370,7 +380,6 @@ function buildReleaseCard(rel, db, seenIds, preferredPlatform) {
 
 function renderAllReleasesFromCache(releases) {
     allLoadedReleases = releases;
-    autoFavoriteFromFavoritedArtists(allLoadedReleases);
     detectBrandNewReleases(allLoadedReleases);
     filterAndRenderCurrentTab();
 }

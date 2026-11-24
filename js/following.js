@@ -90,7 +90,7 @@ function renderArtistGrid(artists, container) {
                 <button class="artist-action-btn pin-btn ${pinned ? 'is-pinned' : ''}" title="${pinned ? 'Unpin from top' : 'Pin to top'}">
                     📌
                 </button>
-                <button class="artist-action-btn fav-artist-btn ${favorited ? 'is-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Favorite (auto-star releases)'}">
+                <button class="artist-action-btn fav-artist-btn ${favorited ? 'is-favorite' : ''}" title="${favorited ? 'Remove priority' : 'Favorite (priority releases)'}">
                     ${favorited ? '★' : '☆'}
                 </button>
                 <button class="btn btn-danger btn-sm" style="flex: 1; border-radius: 9999px;">
@@ -116,26 +116,7 @@ function renderArtistGrid(artists, container) {
         favBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const nowFav = toggleFavoriteArtist(artist.id);
-            if (nowFav) {
-                try {
-                    const cachedStr = sessionStorage.getItem('cachedReleases');
-                    if (cachedStr) {
-                        const cached = JSON.parse(cachedStr);
-                        const db = getDatabase();
-                        let updated = false;
-                        cached.forEach(rel => {
-                            if (rel.artists && rel.artists.some(a => a.id === artist.id)) {
-                                if (!db.favorites.includes(rel.id)) {
-                                    db.favorites.push(rel.id);
-                                    updated = true;
-                                }
-                            }
-                        });
-                        if (updated) saveDatabase(db);
-                    }
-                } catch (_) {}
-            }
-            showToast(nowFav ? `★ ${artist.name} favorited — releases will automatically be favorited!` : `Removed ${artist.name} from favorites`);
+            showToast(nowFav ? `★ ${artist.name} favorited — releases will show at top!` : `Removed ${artist.name} from favorites`);
             filterAndRenderArtists();
         });
 

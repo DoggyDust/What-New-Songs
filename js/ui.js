@@ -20,7 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initAutoUpdateChecker();
+    initStandaloneAppNavigation();
 });
+
+function initStandaloneAppNavigation() {
+    if (typeof window === 'undefined') return;
+    const isStandalone = ('standalone' in window.navigator && window.navigator.standalone) ||
+                         (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches);
+    if (!isStandalone) return;
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.target === '_blank' || link.hasAttribute('download')) return;
+
+        if (link.hostname === window.location.hostname || !href.includes('://')) {
+            e.preventDefault();
+            window.location.href = link.href;
+        }
+    }, false);
+}
 
 function initAutoUpdateChecker() {
     if (typeof window === 'undefined' || !window.fetch) return;
@@ -209,11 +229,7 @@ async function handleGlobalSync() {
 
         const releases = await fetchAllFollowedReleases(db.artists);
 
-        sessionStorage.setItem('cachedReleases', JSON.stringify(releases));
-
-        if (typeof autoFavoriteFromFavoritedArtists === 'function') {
-            autoFavoriteFromFavoritedArtists(releases);
-        }
+        localStorage.setItem('cachedReleases', JSON.stringify(releases));
 
         if (typeof detectBrandNewReleases === 'function') {
             detectBrandNewReleases(releases);
@@ -223,7 +239,20 @@ async function handleGlobalSync() {
             renderAllReleasesFromCache(releases);
         }
 
-        showToast(`Synced! Found ${releases.length} total releases.`, 'success');
+        const seenIds = new Set(db.seenReleaseIds || []);
+        const fresh = releases.filter(r => {
+            if (seenIds.has(r.id)) return false;
+            const diffDays = (typeof getReleaseAgeInDays === 'function')
+                ? getReleaseAgeInDays(r.release_date, r.release_date_precision)
+                : 0;
+            return diffDays >= -5 && diffDays <= 7;
+        });
+
+        if (fresh.length > 0) {
+            showToast(`Found ${fresh.length} new release${fresh.length === 1 ? '' : 's'}!`, 'success');
+        } else {
+            showToast('All caught up! No new releases found.', 'success');
+        }
     } catch (error) {
         showToast('Failed to sync with Spotify.', 'error');
     } finally {

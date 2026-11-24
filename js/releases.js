@@ -81,29 +81,28 @@ async function checkAndLoadReleases(forceRefresh = false) {
         return;
     }
 
-    const cachedStr = sessionStorage.getItem('cachedReleases');
+    let hasRenderedFromCache = false;
+    const cachedStr = localStorage.getItem('cachedReleases');
     if (cachedStr && !forceRefresh) {
         try {
             const cached = JSON.parse(cachedStr);
             if (Array.isArray(cached) && cached.length > 0) {
                 allLoadedReleases = cached;
-                autoFavoriteFromFavoritedArtists(allLoadedReleases);
                 detectBrandNewReleases(allLoadedReleases);
                 filterAndRenderCurrentTab();
+                hasRenderedFromCache = true;
             }
         } catch (_) { }
     }
 
-    if (!allLoadedReleases || allLoadedReleases.length === 0) {
+    if (!hasRenderedFromCache) {
         listContainer.innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--text-secondary);">Checking Spotify for new drops...</p>';
     }
 
     try {
         allLoadedReleases = await fetchAllFollowedReleases(db.artists);
 
-        sessionStorage.setItem('cachedReleases', JSON.stringify(allLoadedReleases));
-
-        autoFavoriteFromFavoritedArtists(allLoadedReleases);
+        localStorage.setItem('cachedReleases', JSON.stringify(allLoadedReleases));
 
         detectBrandNewReleases(allLoadedReleases);
 
@@ -119,26 +118,6 @@ async function checkAndLoadReleases(forceRefresh = false) {
                 </div>
             `;
         }
-    }
-}
-
-function autoFavoriteFromFavoritedArtists(releases) {
-    const db = getDatabase();
-    const favArtistIds = db.favoriteArtists || [];
-    if (favArtistIds.length === 0) return;
-
-    let updated = false;
-    releases.forEach(rel => {
-        if (rel.artists && rel.artists.some(a => favArtistIds.includes(a.id))) {
-            if (!db.favorites.includes(rel.id)) {
-                db.favorites.push(rel.id);
-                updated = true;
-            }
-        }
-    });
-
-    if (updated) {
-        saveDatabase(db);
     }
 }
 
@@ -251,11 +230,32 @@ function renderReleaseCards(releases, container) {
 
     const db = getDatabase();
     const seenIds = new Set(db.seenReleaseIds || []);
+    const favArtistIds = new Set(db.favoriteArtists || []);
     const preferredPlatform = (db.settings && db.settings.platform) ? db.settings.platform : 'spotify';
 
+    function isFromFavArtist(rel) {
+        return Boolean(rel.artists && rel.artists.some(a => favArtistIds.has(a.id)));
+    }
+
+    function sortReleasesWithFavArtists(rels) {
+        return [...rels].sort((a, b) => {
+            const aFav = isFromFavArtist(a);
+            const bFav = isFromFavArtist(b);
+            if (aFav && !bFav) return -1;
+            if (!aFav && bFav) return 1;
+
+            const dateA = a.release_date || '';
+            const dateB = b.release_date || '';
+            return dateB.localeCompare(dateA);
+        });
+    }
+
     if (activeTab === 'new' || activeTab === 'list') {
-        const unseen = releases.filter(r => !seenIds.has(r.id));
-        const seen = releases.filter(r => seenIds.has(r.id));
+        const unseenRaw = releases.filter(r => !seenIds.has(r.id));
+        const seenRaw = releases.filter(r => seenIds.has(r.id));
+
+        const unseen = sortReleasesWithFavArtists(unseenRaw);
+        const seen = sortReleasesWithFavArtists(seenRaw);
 
         if (unseen.length > 0) {
             unseen.forEach(rel => {
@@ -265,7 +265,7 @@ function renderReleaseCards(releases, container) {
             if (seen.length > 0) {
                 const divider = document.createElement('div');
                 divider.className = 'releases-divider';
-                divider.innerHTML = '<span class="releases-divider-label">Past 7 Days</span>';
+                divider.innerHTML = `<span class="releases-divider-label">${activeTab === 'list' ? 'Past 30 Days' : 'Past 7 Days'}</span>`;
                 container.appendChild(divider);
             }
         }
@@ -274,7 +274,8 @@ function renderReleaseCards(releases, container) {
             container.appendChild(buildReleaseCard(rel, db, seenIds, preferredPlatform));
         });
     } else {
-        releases.forEach(rel => {
+        const sorted = sortReleasesWithFavArtists(releases);
+        sorted.forEach(rel => {
             container.appendChild(buildReleaseCard(rel, db, seenIds, preferredPlatform));
         });
     }

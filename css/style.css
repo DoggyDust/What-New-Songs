@@ -63,14 +63,17 @@ body {
 .app-navbar {
     position: sticky;
     top: 0;
-    z-index: 100;
-    height: var(--nav-height);
+    z-index: 1000;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
     background-color: var(--bg-surface);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 28px;
+    padding-left: 28px;
+    padding-right: 28px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
 }
@@ -993,7 +996,11 @@ body.light-mode .mobile-bottom-nav {
     }
 
     .app-navbar {
-        padding: 0 16px;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-left: 16px;
+        padding-right: 16px;
+        height: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
     }
 
     .nav-links {

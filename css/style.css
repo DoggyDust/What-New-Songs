@@ -839,6 +839,58 @@ input[type="color"].color-picker::-webkit-color-swatch {
     border-left: 4px solid var(--danger-color);
 }
 
+.notification-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.notification-history-list.is-expanded {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.notification-history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    gap: 12px;
+}
+
+.notification-history-item.item-error {
+    border-left: 3px solid var(--danger-color);
+}
+
+.notification-history-item.item-success {
+    border-left: 3px solid var(--primary-color);
+}
+
+.notification-history-item.item-info {
+    border-left: 3px solid var(--text-secondary);
+}
+
+.notification-history-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    word-break: break-word;
+    flex: 1;
+}
+
+.notification-history-time {
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
 .empty-state {
     text-align: center;
     padding: 60px 20px;

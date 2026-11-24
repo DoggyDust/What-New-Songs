@@ -241,6 +241,27 @@
                 </div>
             </div>
 
+            <div class="setting-section" style="align-items: flex-start; flex-direction: column; gap: 14px;">
+                <div class="setting-info" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4>System Notification History</h4>
+                        <p>Recent activity alerts and sync notifications.</p>
+                    </div>
+                    <button type="button" id="clearNotificationHistoryBtn" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 10px;">
+                        Clear History
+                    </button>
+                </div>
+
+                <div id="notificationHistoryContainer" style="width: 100%;">
+                    <div id="notificationHistoryList" class="notification-history-list"></div>
+                    <div id="notificationHistoryMoreContainer" style="margin-top: 10px; text-align: center; display: none;">
+                        <button type="button" id="notificationHistoryMoreBtn" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 16px;">
+                            More
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </main>
@@ -267,10 +288,10 @@
 
     <div id="toastContainer"></div>
 
-    <script src="../js/storage.js?v=1.2.2"></script>
-    <script src="../js/spotify-api.js?v=1.2.2"></script>
-    <script src="../js/ui.js?v=1.2.2"></script>
-    <script src="../js/settings.js?v=1.2.2"></script>
+    <script src="../js/storage.js?v=1.2.3"></script>
+    <script src="../js/spotify-api.js?v=1.2.3"></script>
+    <script src="../js/ui.js?v=1.2.3"></script>
+    <script src="../js/settings.js?v=1.2.3"></script>
 
 </body>
 
